@@ -16,7 +16,7 @@ export default function LoginComponent() {
     setIsLoading(true);
     // Simulate login - in production, validate credentials here
     setTimeout(() => {
-      //login(); // Set authentication state
+      localStorage.setItem('isLoggedIn', 'true');
       router.push('/student/dashboard');
     }, 1000);
   };
