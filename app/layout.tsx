@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "../public/output.css";
 import { Cantarell } from "next/font/google";
-import ThemeToggle from "./components/ThemeToggle";
 
 const cantarell = Cantarell({
   subsets: ["latin"],
@@ -26,94 +25,17 @@ export default function RootLayout({
         className={`antialiased flex min-h-screen flex-col ${cantarell.className}`}
       >
         {/* ================= NAVBAR ================= */}
-        <header className="bg-base-100 shadow-sm">
-          <div className="navbar max-w-7xl mx-auto px-4 lg:px-8">
-            {/* Left */}
-            <div className="navbar-start">
-              <div className="dropdown">
-                <div
-                  tabIndex={0}
-                  role="button"
-                  className="btn btn-ghost lg:hidden"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 6h16M4 12h8m-8 6h16"
-                    />
-                  </svg>
-                </div>
-                <ul
-                  tabIndex={0}
-                  className="menu menu-sm dropdown-content mt-3 z-10 p-2 shadow bg-base-100 rounded-box w-52"
-                >
-                  <li>
-                    <a href="#home">Home</a>
-                  </li>
-                  <li>
-                    <a href="#about">About</a>
-                  </li>
-                  <li>
-                    <a href="#company">Company</a>
-                  </li>
-                  <li>
-                    <a href="#contact">Contact</a>
-                  </li>
-                </ul>
-              </div>
-              <a href="/" className="btn btn-ghost text-xl normal-case">
-                Paco
-              </a>
-            </div>
-
-            {/* Center */}
-            <div className="navbar-center hidden lg:flex">
-              <ul className="menu menu-horizontal px-1">
-                <li>
-                  <a href="#home">Home</a>
-                </li>
-                <li>
-                  <a href="#about">About</a>
-                </li>
-                <li>
-                  <a href="#company">Company</a>
-                </li>
-                <li>
-                  <a href="#contact">Contact</a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Right */}
-            <div className="navbar-end mr-2">
-              <a href="#login" className="btn btn-outline btn-primary">
-                Login
-              </a>
-            </div>
-            <ThemeToggle />
-          </div>
-        </header>
 
         {/* ================= MAIN ================= */}
-        <main className="flex-1">
-          {children}
-        </main>
+        <main className="flex-1">{children}</main>
 
         {/* ================= FOOTER ================= */}
         <footer className="bg-base-200 text-base-content">
           <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 gap-8 md:grid-cols-4">
-            {/* Brand */}
-            <aside>
-              <div className="text-2xl font-bold mb-2">CarvU</div>
-              <p className="text-sm opacity-80">
+            {/* Brand — spans 2 columns */}
+            <aside className="md:col-span-2">
+              <div className="text-2xl font-bold mb-2">Placement Cell RVU</div>
+              <p className="text-sm opacity-80 max-w-md">
                 Empowering students to achieve their career goals through
                 world-class placement opportunities.
               </p>
@@ -152,10 +74,10 @@ export default function RootLayout({
               <ul className="space-y-2 text-sm">
                 <li>
                   <a
-                    href="mailto:placements@carvu.edu"
+                    href="mailto:placements@rvu.edu.in"
                     className="link link-hover"
                   >
-                    placements@carvu.edu
+                    placements@rvu.edu.in
                   </a>
                 </li>
                 <li>
@@ -166,14 +88,11 @@ export default function RootLayout({
                 <li className="opacity-80">123 Education Lane, Tech City</li>
               </ul>
             </nav>
-
-            {/* Spacer for balance */}
-            <div className="hidden md:block" />
           </div>
 
           {/* Footer Bottom */}
           <div className="border-t border-base-300 py-4 text-center text-sm">
-            © 2026 CarvU. All rights reserved.
+            © 2026 Placement Cell RVU. All rights reserved.
           </div>
         </footer>
       </body>

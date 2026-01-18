@@ -118,22 +118,7 @@ export default function LoginComponent() {
               </button>
             </div>
           </form>
-
-          {/* Register Link */}
-          <div className="text-center mt-6">
-            <p className="text-sm text-base-content/60">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="link link-primary">
-                Register here
-              </Link>
-            </p>
-          </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-8 text-center text-sm text-base-content/50">
-        <p>© 2026 Placement Cell. All rights reserved.</p>
       </div>
     </div>
   );

@@ -1,90 +1,62 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-type DriveStatus = 'upcoming' | 'ongoing' | 'selected' | 'attended' | 'rejected';
+type DriveStatus =
+  | "upcoming"
+  | "ongoing"
+  | "selected"
+  | "attended"
+  | "rejected";
 
 export default function PlacementDrives() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<DriveStatus>('upcoming');
-  
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    router.push('/login');
-  };
+  const [activeTab, setActiveTab] = useState<DriveStatus>("upcoming");
 
   return (
     <div className="min-h-screen bg-base-100">
-      {/* Header */}
-      <header className="bg-base-100 border-b border-base-300">
-        <div className="navbar max-w-7xl mx-auto px-4">
-          <div className="navbar-start">
-            <Link href="/" className="text-xl font-bold">
-              Placement Cell
-            </Link>
-          </div>
-          <div className="navbar-center hidden lg:flex">
-            <ul className="menu menu-horizontal px-1">
-              <li><Link href="/student/dashboard">Dashboard</Link></li>
-              <li><Link href="/student/profile">Profile</Link></li>
-              <li><Link href="/student/drives" className="active">Placement Drives</Link></li>
-              <li><Link href="/student/offers">Job Offers</Link></li>
-              <li><Link href="/student/events">Events</Link></li>
-              <li><Link href="/student/policy">Policy</Link></li>
-            </ul>
-          </div>
-          <div className="navbar-end gap-2">
-            <label className="input input-bordered input-sm hidden lg:flex items-center gap-2 w-64">
-              <input type="text" placeholder="Search for jobs, pages..." className="grow" />
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </label>
-            <button onClick={handleLogout} className="btn btn-primary btn-sm">
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-base-content">Placement Drives</h1>
-          <p className="text-base-content/60 mt-1">View and apply for upcoming placement opportunities</p>
+          <h1 className="text-3xl font-bold text-base-content">
+            Placement Drives
+          </h1>
+          <p className="text-base-content/60 mt-1">
+            View and apply for upcoming placement opportunities
+          </p>
         </div>
 
         {/* Tabs */}
         <div className="tabs tabs-boxed bg-base-200 p-1 mb-8">
-          <button 
-            onClick={() => setActiveTab('upcoming')}
-            className={`tab ${activeTab === 'upcoming' ? 'tab-active' : ''}`}
+          <button
+            onClick={() => setActiveTab("upcoming")}
+            className={`tab ${activeTab === "upcoming" ? "tab-active" : ""}`}
           >
             Upcoming (0)
           </button>
-          <button 
-            onClick={() => setActiveTab('ongoing')}
-            className={`tab ${activeTab === 'ongoing' ? 'tab-active' : ''}`}
+          <button
+            onClick={() => setActiveTab("ongoing")}
+            className={`tab ${activeTab === "ongoing" ? "tab-active" : ""}`}
           >
             Ongoing (1)
           </button>
-          <button 
-            onClick={() => setActiveTab('selected')}
-            className={`tab ${activeTab === 'selected' ? 'tab-active' : ''}`}
+          <button
+            onClick={() => setActiveTab("selected")}
+            className={`tab ${activeTab === "selected" ? "tab-active" : ""}`}
           >
             Selected (1)
           </button>
-          <button 
-            onClick={() => setActiveTab('attended')}
-            className={`tab ${activeTab === 'attended' ? 'tab-active' : ''}`}
+          <button
+            onClick={() => setActiveTab("attended")}
+            className={`tab ${activeTab === "attended" ? "tab-active" : ""}`}
           >
             Attended (0)
           </button>
-          <button 
-            onClick={() => setActiveTab('rejected')}
-            className={`tab ${activeTab === 'rejected' ? 'tab-active' : ''}`}
+          <button
+            onClick={() => setActiveTab("rejected")}
+            className={`tab ${activeTab === "rejected" ? "tab-active" : ""}`}
           >
             Rejected (2)
           </button>
@@ -93,43 +65,64 @@ export default function PlacementDrives() {
         {/* Content */}
         <div className="card bg-base-100 shadow border border-base-300">
           <div className="card-body">
-            {activeTab === 'upcoming' && (
+            {activeTab === "upcoming" && (
               <div className="text-center py-16">
                 <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-xl font-bold text-base-content mb-2">No upcoming drives available</h3>
-                <p className="text-base-content/60">Check back soon for new opportunities!</p>
+                <h3 className="text-xl font-bold text-base-content mb-2">
+                  No upcoming drives available
+                </h3>
+                <p className="text-base-content/60">
+                  Check back soon for new opportunities!
+                </p>
               </div>
             )}
-            
-            {activeTab === 'ongoing' && (
+
+            {activeTab === "ongoing" && (
               <div className="text-center py-16">
                 <div className="text-6xl mb-4">⚡</div>
-                <h3 className="text-xl font-bold text-base-content mb-2">No ongoing drives</h3>
-                <p className="text-base-content/60">All your active applications will appear here</p>
+                <h3 className="text-xl font-bold text-base-content mb-2">
+                  No ongoing drives
+                </h3>
+                <p className="text-base-content/60">
+                  All your active applications will appear here
+                </p>
               </div>
             )}
-            
-            {activeTab === 'selected' && (
+
+            {activeTab === "selected" && (
               <div className="text-center py-16">
                 <div className="text-6xl mb-4">🎉</div>
-                <h3 className="text-xl font-bold text-base-content mb-2">No selections yet</h3>
-                <p className="text-base-content/60">Keep applying and your selections will show up here</p>
+                <h3 className="text-xl font-bold text-base-content mb-2">
+                  No selections yet
+                </h3>
+                <p className="text-base-content/60">
+                  Keep applying and your selections will show up here
+                </p>
               </div>
             )}
-            
-            {activeTab === 'attended' && (
+
+            {activeTab === "attended" && (
               <div className="text-center py-16">
                 <div className="text-6xl mb-4">📚</div>
-                <h3 className="text-xl font-bold text-base-content mb-2">No attended drives</h3>
-                <p className="text-base-content/60">Drives you&apos;ve completed will be listed here</p>
+                <h3 className="text-xl font-bold text-base-content mb-2">
+                  No attended drives
+                </h3>
+                <p className="text-base-content/60">
+                  Drives you&apos;ve completed will be listed here
+                </p>
               </div>
             )}
-            
-            {activeTab === 'rejected' && (
+
+            {activeTab === "rejected" && (
               <div className="text-center py-16">
                 <div className="text-6xl mb-4">💪</div>
-                <h3 className="text-xl font-bold text-base-content mb-2">No rejections</h3>
-                <p className="text-base-content/60">Don&apos;t give up! Every rejection is a step closer to success</p>
+                <h3 className="text-xl font-bold text-base-content mb-2">
+                  No rejections
+                </h3>
+                <p className="text-base-content/60">
+                  Don&apos;t give up! Every rejection is a step closer to
+                  success
+                </p>
               </div>
             )}
           </div>

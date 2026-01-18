@@ -64,11 +64,6 @@ export default function Events() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<EventTab>('upcoming');
   
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    router.push('/login');
-  };
-
   const filteredEvents = mockEvents.filter(event => {
     if (activeTab === 'upcoming') return event.status === 'upcoming';
     if (activeTab === 'past') return event.status === 'past';
@@ -84,37 +79,6 @@ export default function Events() {
 
   return (
     <div className="min-h-screen bg-base-100">
-      {/* Header */}
-      <header className="bg-base-100 border-b border-base-300">
-        <div className="navbar max-w-7xl mx-auto px-4">
-          <div className="navbar-start">
-            <Link href="/" className="text-xl font-bold">
-              Placement Cell
-            </Link>
-          </div>
-          <div className="navbar-center hidden lg:flex">
-            <ul className="menu menu-horizontal px-1">
-              <li><Link href="/student/dashboard">Dashboard</Link></li>
-              <li><Link href="/student/profile">Profile</Link></li>
-              <li><Link href="/student/drives">Placement Drives</Link></li>
-              <li><Link href="/student/offers">Job Offers</Link></li>
-              <li><Link href="/student/events" className="active">Events</Link></li>
-              <li><Link href="/student/policy">Policy</Link></li>
-            </ul>
-          </div>
-          <div className="navbar-end gap-2">
-            <label className="input input-bordered input-sm hidden lg:flex items-center gap-2 w-64">
-              <input type="text" placeholder="Search for jobs, pages..." className="grow" />
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </label>
-            <button onClick={handleLogout} className="btn btn-primary btn-sm">
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
