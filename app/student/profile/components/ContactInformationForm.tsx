@@ -21,7 +21,7 @@ export default function ContactInformationForm({
             <input
               type="email"
               placeholder="student@university.edu"
-              disabled={!isEditing}
+              disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -46,7 +46,7 @@ export default function ContactInformationForm({
               type="text"
               placeholder="+91"
               defaultValue="+91"
-              disabled={!isEditing}
+              disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -58,7 +58,7 @@ export default function ContactInformationForm({
             <input
               type="tel"
               placeholder="9876543210"
-              disabled={!isEditing}
+              disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -75,17 +75,7 @@ export default function ContactInformationForm({
             <input
               type="url"
               placeholder="https://linkedin.com/in/username"
-              disabled={!isEditing}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">GitHub</label>
-            <input
-              type="url"
-              placeholder="https://github.com/username"
-              disabled={!isEditing}
+              disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -103,10 +93,20 @@ export default function ContactInformationForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Other Link</label>
+            <label className="block text-sm font-medium mb-2">Other Link 1</label>
             <input
               type="url"
-              placeholder="https://other-link.com"
+              placeholder="https://other-link1.com"
+              disabled={!isEditing}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Other Link 2</label>
+            <input
+              type="url"
+              placeholder="https://other-link2.com"
               disabled={!isEditing}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />

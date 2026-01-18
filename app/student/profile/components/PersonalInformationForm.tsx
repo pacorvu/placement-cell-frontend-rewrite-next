@@ -29,7 +29,7 @@ export default function PersonalInformationForm({
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Personal Details</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={"grid grid-cols-1 md:grid-cols-2 gap-4 " + (!isEditing ? "opacity-60 pointer-events-none" : "") }>
           <div>
             <label className="block text-sm font-medium mb-2">Gender</label>
             <select
@@ -63,9 +63,8 @@ export default function PersonalInformationForm({
             <input
               type="text"
               value={languageInput}
-              disabled={!isEditing}
               placeholder="Add a language"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               onChange={(e) => setLanguageInput(e.target.value)}
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
@@ -77,8 +76,7 @@ export default function PersonalInformationForm({
             <button
               type="button"
               onClick={addLanguage}
-              disabled={!isEditing}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
             >
               +
             </button>
@@ -95,8 +93,7 @@ export default function PersonalInformationForm({
                   <button
                     type="button"
                     onClick={() => removeLanguage(index)}
-                    disabled={!isEditing}
-                    className="hover:text-red-600 disabled:cursor-not-allowed"
+                    className="hover:text-red-600"
                   >
                     ×
                   </button>
@@ -111,7 +108,7 @@ export default function PersonalInformationForm({
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Academic Identity</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={"grid grid-cols-1 md:grid-cols-2 gap-4 " + (!isEditing ? "opacity-60 pointer-events-none" : "") }>
           <div>
             <label className="block text-sm font-medium mb-2">
               School Name
