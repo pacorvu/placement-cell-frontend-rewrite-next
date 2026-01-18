@@ -115,12 +115,7 @@ export default function ContactInformationForm({
       </div>
 
       {/* Edit Button */}
-      <button
-        type="button"
-        className="px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
-      >
-        Edit
-      </button>
+
     </div>
   );
 }

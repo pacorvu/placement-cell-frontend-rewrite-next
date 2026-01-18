@@ -19,60 +19,60 @@ import ExtraCurricularForm from "./components/ExtraCurricularForm";
 import OtherExperiencesForm from "./components/OtherExperiencesForm";
 
 const sidebarItems = [
-  { 
-    id: "personal", 
-    label: "Personal Information", 
+  {
+    id: "personal",
+    label: "Personal Information",
     hasData: true,
     icon: <i className="material-icons h-5 w-5">person</i>
   },
-  { 
-    id: "contact", 
-    label: "Contact & Links", 
+  {
+    id: "contact",
+    label: "Contact & Links",
     hasData: false,
     icon: <i className="material-icons h-5 w-5">email</i>
   },
-  { 
-    id: "parent", 
-    label: "Parent / Guardian Details", 
+  {
+    id: "parent",
+    label: "Parent / Guardian Details",
     hasData: false,
     icon: <i className="material-icons h-5 w-5">family_restroom</i>
   },
-  { 
-    id: "career", 
-    label: "Career Overview", 
+  {
+    id: "career",
+    label: "Career Overview",
     hasData: false,
     icon: <i className="material-icons h-5 w-5">work</i>
   },
-  { 
-    id: "education", 
-    label: "Education", 
+  {
+    id: "education",
+    label: "Education",
     hasData: false,
     icon: <i className="material-icons h-5 w-5">school</i>
   },
-  { 
-    id: "academic", 
-    label: "Academic Performance", 
+  {
+    id: "academic",
+    label: "Academic Performance",
     hasData: false,
     icon: <i className="material-icons h-5 w-5">bar_chart</i>
   },
-  { 
-    id: "projects", 
-    label: "Projects", 
-    hasData: false, 
+  {
+    id: "projects",
+    label: "Projects",
+    hasData: false,
     addable: true,
     icon: <i className="material-icons h-5 w-5">code</i>
   },
-  { 
-    id: "internships", 
-    label: "Internships", 
-    hasData: false, 
+  {
+    id: "internships",
+    label: "Internships",
+    hasData: false,
     addable: true,
     icon: <i className="material-icons h-5 w-5">business_center</i>
   },
-  { 
-    id: "training", 
-    label: "Training & Workshops", 
-    hasData: false, 
+  {
+    id: "training",
+    label: "Training & Workshops",
+    hasData: false,
     addable: true,
     icon: <i className="material-icons h-5 w-5">local_library</i>
   },
@@ -83,30 +83,30 @@ const sidebarItems = [
     addable: true,
     icon: <i className="material-icons h-5 w-5">verified</i>
   },
-  { 
-    id: "publications", 
-    label: "Publications", 
-    hasData: false, 
+  {
+    id: "publications",
+    label: "Publications",
+    hasData: false,
     addable: true,
     icon: <i className="material-icons h-5 w-5">article</i>
   },
-  { 
-    id: "extracurricular", 
-    label: "Extra-Curricular Activities", 
-    hasData: false, 
+  {
+    id: "extracurricular",
+    label: "Extra-Curricular Activities",
+    hasData: false,
     addable: true,
     icon: <i className="material-icons h-5 w-5">star</i>
   },
-  { 
-    id: "experiences", 
-    label: "Other Experiences", 
-    hasData: false, 
+  {
+    id: "experiences",
+    label: "Other Experiences",
+    hasData: false,
     addable: true,
     icon: <i className="material-icons h-5 w-5">work_outline</i>
   },
-  { 
-    id: "resume", 
-    label: "Resume", 
+  {
+    id: "resume",
+    label: "Resume",
     hasData: false,
     icon: <i className="material-icons h-5 w-5">description</i>
   },
@@ -132,11 +132,10 @@ export default function StudentProfile() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full text-left px-3 py-2 rounded-lg transition-all text-sm flex items-center gap-3 ${
-                    activeSection === item.id
-                      ? "bg-primary text-primary-content font-medium"
-                      : "hover:bg-base-300 text-base-content"
-                  }`}
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-all text-sm flex items-center gap-3 ${activeSection === item.id
+                    ? "bg-primary text-primary-content font-medium"
+                    : "hover:bg-base-300 text-base-content"
+                    }`}
                 >
                   {item.icon}
                   <span className="flex-1">{item.label}</span>
@@ -243,23 +242,23 @@ export default function StudentProfile() {
 
 
           {/* For other sections */}
-          {!sidebarItems.find((item) => item.id === activeSection)?.addable &&
-            activeSection !== "personal" && (
-              <div className="card bg-base-100 shadow border border-base-300">
-                <div className="card-body">
-                  <div className="alert alert-info">
-                    <i className="material-icons shrink-0 w-6 h-6">info</i>
-                    <div>
-                      <h3 className="font-bold">Section Incomplete</h3>
-                      <div className="text-sm">
-                        Complete this section to improve your profile visibility
-                        to recruiters.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* {!sidebarItems.find((item) => item.id === activeSection)?.addable && */}
+          {/*   activeSection !== "personal" && ( */}
+          {/*     <div className="card bg-base-100 shadow border border-base-300"> */}
+          {/*       <div className="card-body"> */}
+          {/*         <div className="alert alert-info"> */}
+          {/*           <i className="material-icons shrink-0 w-6 h-6">info</i> */}
+          {/*           <div> */}
+          {/*             <h3 className="font-bold">Section Incomplete</h3> */}
+          {/*             <div className="text-sm"> */}
+          {/*               Complete this section to improve your profile visibility */}
+          {/*               to recruiters. */}
+          {/*             </div> */}
+          {/*           </div> */}
+          {/*         </div> */}
+          {/*       </div> */}
+          {/*     </div> */}
+          {/* )} */}
         </main>
       </div>
     </div>
