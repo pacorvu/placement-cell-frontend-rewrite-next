@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 export default function StudentDashboard() {
   const router = useRouter();
   const [profileCompletion, setProfileCompletion] = useState(0);
-
+  
   useEffect(() => {
     // Animate profile completion from 0 to 75
     let current = 0;

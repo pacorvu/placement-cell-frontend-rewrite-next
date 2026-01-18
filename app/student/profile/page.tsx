@@ -140,9 +140,9 @@ export default function StudentProfile() {
                 >
                   {item.icon}
                   <span className="flex-1">{item.label}</span>
-                  {item.hasData && activeSection !== item.id && (
+                  {/* {item.hasData && activeSection !== item.id && (
                     <span className="badge badge-success badge-xs"></span>
-                  )}
+                  )} */}
                 </button>
               ))}
             </nav>

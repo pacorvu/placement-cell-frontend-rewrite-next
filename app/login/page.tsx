@@ -1,5 +1,5 @@
-import LoginComponent from "../components/LoginComponent";
-import ThemeToggle from "../components/ThemeToggle";
+import LoginComponent from "../../components/LoginComponent";
+import ThemeToggle from "../../components/ThemeToggle";
 
 export default function LoginPage() {
   return (
