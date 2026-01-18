@@ -3,11 +3,9 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
 
 export default function StudentDashboard() {
   const router = useRouter();
-  const { logout } = useAuth();
   const [profileCompletion, setProfileCompletion] = useState(0);
 
   useEffect(() => {
@@ -28,7 +26,6 @@ export default function StudentDashboard() {
   }, []);
 
   const handleLogout = () => {
-    logout();
     router.push('/login');
   };
 

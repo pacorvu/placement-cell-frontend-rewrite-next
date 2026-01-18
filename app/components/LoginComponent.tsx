@@ -3,11 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
 
 export default function LoginComponent() {
   const router = useRouter();
-  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,7 +16,7 @@ export default function LoginComponent() {
     setIsLoading(true);
     // Simulate login - in production, validate credentials here
     setTimeout(() => {
-      login(); // Set authentication state
+      //login(); // Set authentication state
       router.push('/student/dashboard');
     }, 1000);
   };
