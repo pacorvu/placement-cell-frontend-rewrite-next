@@ -1,0 +1,197 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* @plugin "daisyui/theme" {
+    name: "light";
+    default: true;
+    prefersdark: false;
+    color-scheme: "light";
+
+    --color-base-100: oklch(1.0000 0 0);
+    --color-base-200: oklch(0.9530 0.0156 86.4257);
+
+    --color-base-300: oklch(0.9040 0.0224 89.8013);
+
+    --color-base-content: oklch(0.3013 0.0240 238.8090);
+
+    --color-primary: oklch(0.7662 0.1173 83.2274);
+    --color-primary-content: oklch(0.3013 0.0240 238.8090);
+    --color-secondary: oklch(0.3013 0.0240 238.8090);
+    --color-secondary-content: oklch(1.0000 0 0);
+
+    --color-accent: oklch(0.3285 0.0046 354.9853);
+    --color-accent-content: oklch(1.0000 0 0);
+
+    --color-neutral: oklch(0.3285 0.0046 354.9853);
+    --color-neutral-content: oklch(1.0000 0 0);
+
+    --color-info: oklch(74% 0.16 232.661);
+    --color-info-content: oklch(29% 0.066 243.157);
+    --color-success: oklch(76% 0.177 163.223);
+    --color-success-content: oklch(37% 0.077 168.94);
+    --color-warning: oklch(82% 0.189 84.429);
+    --color-warning-content: oklch(41% 0.112 45.904);
+    --color-error: oklch(71% 0.194 13.428);
+    --color-error-content: oklch(27% 0.105 12.094);
+
+    --radius-selector: 0.35rem;
+    --radius-field: 0.35rem;
+    --radius-box: 0.35rem;
+    --radius-btn: 0.35rem;
+
+    --border: 1px;
+    --border-btn: 1px;
+
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --depth: 1;
+    --noise: 0;
+} */
+
+/* @plugin "daisyui/theme" {
+    name: "dark";
+    default: false;
+    prefersdark: true;
+    color-scheme: "dark";
+
+
+    --color-base-100: oklch(25.33% 0.016 252.42);
+    --color-base-200: oklch(23.26% 0.014 253.1);
+
+    --color-base-300: oklch(21.15% 0.012 254.09);
+    --color-base-content: oklch(0.9323 0.0042 236.4998);
+
+    --color-primary: #d7ac54;
+    --color-primary-content: oklch(0.1800 0.0100 248.0000);
+
+    --color-secondary: oklch(0.3200 0.0220 242.0000);
+   
+    --color-secondary-content: oklch(0.9530 0.0156 86.4257);
+
+    --color-accent: oklch(0.4500 0.0080 355.0000);
+    --color-accent-content: oklch(0.9530 0.0156 86.4257);
+
+    --color-neutral: oklch(0.2800 0.0160 244.0000);
+    --color-neutral-content: oklch(0.9530 0.0156 86.4257);
+
+    --color-info: oklch(74% 0.16 232.661);
+    --color-info-content: oklch(29% 0.066 243.157);
+    --color-success: oklch(76% 0.177 163.223);
+    --color-success-content: oklch(37% 0.077 168.94);
+    --color-warning: oklch(82% 0.189 84.429);
+    --color-warning-content: oklch(41% 0.112 45.904);
+    --color-error: oklch(71% 0.194 13.428);
+    --color-error-content: oklch(27% 0.105 12.094);
+
+    --radius-selector: 0.35rem;
+    --radius-field: 0.35rem;
+    --radius-box: 0.35rem;
+    --radius-btn: 0.35rem;
+
+    --border: 1px;
+    --border-btn: 1px;
+
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --depth: 1;
+    --noise: 0;
+} */
+
+@plugin "daisyui/theme" {
+    name: "light";
+    default: false;
+    prefersdark: false;
+    color-scheme: "light";
+
+    --color-base-100: oklch(100% 0 0);
+    --color-base-200: oklch(93% 0 0);
+    --color-base-300: oklch(86% 0 0);
+    --color-base-content: oklch(22.389% 0.031 278.072);
+
+    --color-primary: oklch(0.7662 0.1173 83.2274);
+    --color-primary-content: oklch(0.3013 0.0240 238.8090);
+
+    --color-secondary: oklch(0.3013 0.0240 238.8090);
+    --color-secondary-content: oklch(1.0000 0 0);
+
+    --color-accent: oklch(0.8500 0.0450 184.704);
+    --color-accent-content: oklch(0.2500 0.0240 238.8090);
+
+    --color-neutral: oklch(0% 0 0);
+    --color-neutral-content: oklch(100% 0 0);
+
+    --color-info: oklch(72.06% 0.191 231.6);
+    --color-info-content: oklch(0% 0 0);
+    --color-success: oklch(64.8% 0.15 160);
+    --color-success-content: oklch(0% 0 0);
+    --color-warning: oklch(84.71% 0.199 83.87);
+    --color-warning-content: oklch(0% 0 0);
+    --color-error: oklch(71.76% 0.221 22.18);
+    --color-error-content: oklch(0% 0 0);
+
+    --radius-selector: 0.25rem;
+    --radius-field: 0.25rem;
+    --radius-box: 0.25rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+    name: "dark";
+    default: false;
+    prefersdark: true;
+    color-scheme: "dark";
+
+    /* Base colors - variations of RVU dark blue (secondary from light) */
+    --color-base-100: oklch(0.2313 0.0240 238.8090);
+    /* darkest - 7% darker than light secondary */
+    --color-base-200: oklch(0.2613 0.0240 238.8090);
+    /* mid dark - 4% lighter */
+    --color-base-300: oklch(0.2913 0.0240 238.8090);
+    /* lighter - another 3% up */
+    --color-base-content: oklch(97.611% 0.031 278.072);
+    /* inverted from light - bright text */
+
+    /* RVU Brand Colors - primary stays same */
+    --color-primary: oklch(0.7662 0.1173 83.2274);
+    /* RVU gold - unchanged */
+    --color-primary-content: oklch(0.2313 0.0240 238.8090);
+    /* dark blue text on gold */
+
+    /* Secondary - very light blue variation */
+    --color-secondary: oklch(0.8513 0.0240 238.8090);
+    /* very light version of the blue */
+    --color-secondary-content: oklch(0.2313 0.0240 238.8090);
+    /* dark text on light background */
+    
+    /* Accent - unchanged */
+    --color-accent: oklch(0.8500 0.0450 184.704);
+    --color-accent-content: oklch(0.2500 0.0240 238.8090);
+
+    --color-neutral: oklch(100% 0 0);
+    --color-neutral-content: oklch(0% 0 0);
+    /* dark text for readability */
+
+    /* Status colors - unchanged */
+    --color-info: oklch(72.06% 0.191 231.6);
+    --color-info-content: oklch(0% 0 0);
+    --color-success: oklch(64.8% 0.15 160);
+    --color-success-content: oklch(0% 0 0);
+    --color-warning: oklch(84.71% 0.199 83.87);
+    --color-warning-content: oklch(0% 0 0);
+    --color-error: oklch(71.76% 0.221 22.18);
+    --color-error-content: oklch(0% 0 0);
+
+    /* Radius - unchanged */
+    --radius-selector: 0.25rem;
+    --radius-field: 0.25rem;
+    --radius-box: 0.25rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
