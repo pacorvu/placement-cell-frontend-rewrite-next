@@ -47,19 +47,7 @@ export default function StudentDashboard() {
         {/* Profile Completion Alert */}
         {profileCompletion < 100 && (
           <div className="alert alert-warning mb-6">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              className="stroke-current shrink-0 w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              ></path>
-            </svg>
+            <i className="material-icons shrink-0 w-6 h-6">warning</i>
             <div className="flex-1">
               <h3 className="font-bold">Complete Your Profile</h3>
               <div className="text-sm">
@@ -92,19 +80,7 @@ export default function StudentDashboard() {
           <div className="stats shadow border border-base-300">
             <div className="stat">
               <div className="stat-figure text-primary">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="inline-block w-8 h-8 stroke-current"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  ></path>
-                </svg>
+                <i className="material-icons inline-block w-8 h-8">description</i>
               </div>
               <div className="stat-title">Total Applications</div>
               <div className="stat-value text-primary">0</div>
@@ -116,19 +92,7 @@ export default function StudentDashboard() {
           <div className="stats shadow border border-base-300">
             <div className="stat">
               <div className="stat-figure text-secondary">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="inline-block w-8 h-8 stroke-current"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  ></path>
-                </svg>
+                <i className="material-icons inline-block w-8 h-8">event</i>
               </div>
               <div className="stat-title">Interviews Scheduled</div>
               <div className="stat-value text-secondary">0</div>
@@ -140,19 +104,7 @@ export default function StudentDashboard() {
           <div className="stats shadow border border-base-300">
             <div className="stat">
               <div className="stat-figure text-success">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="inline-block w-8 h-8 stroke-current"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
+                <i className="material-icons inline-block w-8 h-8">check_circle</i>
               </div>
               <div className="stat-title">Offers Received</div>
               <div className="stat-value text-success">0</div>
@@ -166,19 +118,7 @@ export default function StudentDashboard() {
               <div
                 className={`stat-figure ${getCompletionColor(profileCompletion)}`}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="inline-block w-8 h-8 stroke-current"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  ></path>
-                </svg>
+                <i className="material-icons inline-block w-8 h-8">person</i>
               </div>
               <div className="stat-title">Profile Completeness</div>
               <div
@@ -246,19 +186,7 @@ export default function StudentDashboard() {
                 <h2 className="card-title text-lg">Upcoming Interviews</h2>
                 <div className="space-y-4">
                   <div className="alert alert-info">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      className="stroke-current shrink-0 w-6 h-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      ></path>
-                    </svg>
+                    <i className="material-icons shrink-0 w-6 h-6">info</i>
                     <span className="text-sm">No interviews scheduled yet</span>
                   </div>
                 </div>
@@ -274,57 +202,21 @@ export default function StudentDashboard() {
                     href="/student/profile"
                     className="btn btn-outline btn-sm w-full justify-start"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      className="inline-block w-4 h-4 stroke-current mr-2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      ></path>
-                    </svg>
+                    <i className="material-icons inline-block w-4 h-4 mr-2">person</i>
                     Edit Profile
                   </Link>
                   <Link
                     href="/student/resume"
                     className="btn btn-outline btn-sm w-full justify-start"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      className="inline-block w-4 h-4 stroke-current mr-2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      ></path>
-                    </svg>
+                    <i className="material-icons inline-block w-4 h-4 mr-2">description</i>
                     Upload Resume
                   </Link>
                   <Link
                     href="/student/drives"
                     className="btn btn-outline btn-sm w-full justify-start"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      className="inline-block w-4 h-4 stroke-current mr-2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      ></path>
-                    </svg>
+                    <i className="material-icons inline-block w-4 h-4 mr-2">work</i>
                     Browse Jobs
                   </Link>
                 </div>
