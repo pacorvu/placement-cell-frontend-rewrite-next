@@ -27,7 +27,7 @@ export default function RoleGuard({ requiredRole, children }: RoleGuardProps) {
         );
 
         const data = await res.json();
-        setAllowed(data.role === requiredRole);
+        setAllowed(data.role_name === requiredRole);
       } catch {
         setAllowed(false);
       }

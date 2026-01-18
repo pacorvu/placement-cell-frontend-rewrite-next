@@ -108,15 +108,6 @@ export default function LoginComponent() {
             <p className="text-base-content/60 mt-2">Sign in to continue</p>
           </div>
 
-          {/* ================= TEST CREDS ================= */}
-          <div className="alert alert-info mb-4 text-xs">
-            <div>
-              <strong>Test Credentials</strong>
-              <div>Email: student@test.com</div>
-              <div>Password: Test@123</div>
-            </div>
-          </div>
-
           {/* ================= FORM ================= */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
