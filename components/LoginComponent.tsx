@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { authService } from "@/lib/api"; // Adjust path as needed
 
 type AlertType = "success" | "error" | "info" | null;
 
@@ -34,33 +35,20 @@ export default function LoginComponent() {
     setAlert({ type: null, message: "" });
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        },
-      );
+      // Use authService which handles:
+      // 1. Login API call
+      // 2. Storing tokens (access_token, refresh_token, user_id, role_type, isLoggedIn)
+      // 3. Fetching and caching user data
+      const data = await authService.login(email, password);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-
-      // Store auth data
-      localStorage.setItem("user_id", data.user_id);
-      localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("refresh_token", data.refresh_token);
-      localStorage.setItem("isLoggedIn", "true");
       // UX feedback
       setAlert({ type: "success", message: "Login successful! Redirecting…" });
+
       setTimeout(() => {
+        // Route based on role_type
         if (data.role_type === "Student") router.push("/student/dashboard");
         else if (data.role_type === "Alumni") router.push("/alumni/dashboard");
-        else if (data.role_type === "Company")
-          router.push("/company/dashboard");
+        else if (data.role_type === "Company") router.push("/company/dashboard");
         else if (data.role_type === "Dean") router.push("/dean/dashboard");
         else if (
           data.role_type === "Management" ||
@@ -71,12 +59,22 @@ export default function LoginComponent() {
           router.push("/parents/dashboard");
         else if (data.role_type === "Placement_Officer")
           router.push("/placement/dashboard");
-        else throw new Error("Role doesn't Exist");
+        else {
+          setAlert({
+            type: "error",
+            message: "Role doesn't exist",
+          });
+        }
       }, 1000);
     } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Something went wrong";
+
       setAlert({
         type: "error",
-        message: err.message || "Something went wrong",
+        message: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -90,13 +88,12 @@ export default function LoginComponent() {
           {/* ================= ALERT ================= */}
           {alert.type && (
             <div
-              className={`alert mb-4 ${
-                alert.type === "success"
+              className={`alert mb-4 ${alert.type === "success"
                   ? "alert-success"
                   : alert.type === "error"
                     ? "alert-error"
                     : "alert-info"
-              }`}
+                }`}
             >
               <span>{alert.message}</span>
             </div>
