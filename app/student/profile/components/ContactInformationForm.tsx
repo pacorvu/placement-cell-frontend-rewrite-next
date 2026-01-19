@@ -1,5 +1,8 @@
 "use client";
 
+import { useUser } from "@/lib/useUser";
+
+
 interface ContactInformationFormProps {
   isEditing: boolean;
 }
@@ -7,6 +10,19 @@ interface ContactInformationFormProps {
 export default function ContactInformationForm({
   isEditing,
 }: ContactInformationFormProps) {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  const profileCommunication = user?.profile_communication;
+  const links = profileCommunication?.links as Record<string, string> | undefined;
+
   return (
     <div className="space-y-8">
       {/* Contact Information Section */}
@@ -21,6 +37,7 @@ export default function ContactInformationForm({
             <input
               type="email"
               placeholder="student@university.edu"
+              value={profileCommunication?.college_email || ""}
               disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
@@ -33,6 +50,7 @@ export default function ContactInformationForm({
             <input
               type="email"
               placeholder="personal@email.com"
+              value={profileCommunication?.personal_email || ""}
               disabled={!isEditing}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
@@ -45,7 +63,7 @@ export default function ContactInformationForm({
             <input
               type="text"
               placeholder="+91"
-              defaultValue="+91"
+              value={profileCommunication?.phone_country_code || "+91"}
               disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
@@ -58,6 +76,7 @@ export default function ContactInformationForm({
             <input
               type="tel"
               placeholder="9876543210"
+              value={profileCommunication?.phone_number || ""}
               disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
@@ -75,6 +94,7 @@ export default function ContactInformationForm({
             <input
               type="url"
               placeholder="https://linkedin.com/in/username"
+              value={links?.linkedin || ""}
               disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
@@ -87,6 +107,7 @@ export default function ContactInformationForm({
             <input
               type="url"
               placeholder="https://yourportfolio.com"
+              value={links?.portfolio || ""}
               disabled={!isEditing}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
@@ -97,6 +118,7 @@ export default function ContactInformationForm({
             <input
               type="url"
               placeholder="https://other-link1.com"
+              value={links?.other1 || ""}
               disabled={!isEditing}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
@@ -107,15 +129,13 @@ export default function ContactInformationForm({
             <input
               type="url"
               placeholder="https://other-link2.com"
+              value={links?.other2 || ""}
               disabled={!isEditing}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
         </div>
       </div>
-
-      {/* Edit Button */}
-
     </div>
   );
 }

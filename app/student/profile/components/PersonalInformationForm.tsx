@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useUser } from "@/lib/useUser";
+import { useState, useEffect } from "react";
 
 interface PersonalInformationFormProps {
   isEditing: boolean;
@@ -9,8 +10,35 @@ interface PersonalInformationFormProps {
 export default function PersonalInformationForm({
   isEditing,
 }: PersonalInformationFormProps) {
+  const { user, isLoading } = useUser();
+
   const [languages, setLanguages] = useState<string[]>([]);
   const [languageInput, setLanguageInput] = useState("");
+
+  // Populate form with user data
+  useEffect(() => {
+    if (user?.personal_details) {
+      // Parse languages string to array
+      if (user.personal_details.languages) {
+        try {
+          // Try parsing as JSON array first
+          const parsed = JSON.parse(user.personal_details.languages);
+          if (Array.isArray(parsed)) {
+            setLanguages(parsed);
+          } else {
+            setLanguages([]);
+          }
+        } catch {
+          // If not JSON, try comma-separated
+          const langs = user.personal_details.languages
+            .split(",")
+            .map((l) => l.trim())
+            .filter(Boolean);
+          setLanguages(langs);
+        }
+      }
+    }
+  }, [user]);
 
   const addLanguage = () => {
     if (languageInput.trim()) {
@@ -23,23 +51,33 @@ export default function PersonalInformationForm({
     setLanguages(languages.filter((_, i) => i !== index));
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  const personalDetails = user?.personal_details;
+
   return (
     <div className="space-y-8">
       {/* Personal Details Section */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Personal Details</h2>
-        {/* + (!isEditing ? "opacity-60 pointer-events-none" : "") */}
-        <div className={"grid grid-cols-1 md:grid-cols-2 gap-4 "}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Gender</label>
             <select
-              disabled={true}
+              disabled={!isEditing}
+              value={personalDetails?.gender || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             >
-              <option>Select Gender</option>
-              <option>Male</option>
-              <option>Female</option>
-              <option>Other</option>
+              <option value="">Select Gender</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
             </select>
           </div>
 
@@ -49,7 +87,8 @@ export default function PersonalInformationForm({
             </label>
             <input
               type="date"
-              disabled={true}
+              disabled={!isEditing}
+              value={personalDetails?.date_of_birth || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -63,9 +102,9 @@ export default function PersonalInformationForm({
             <input
               type="text"
               value={languageInput}
-              disabled
+              disabled={!isEditing}
               placeholder="Add a language"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
               onChange={(e) => setLanguageInput(e.target.value)}
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
@@ -77,7 +116,8 @@ export default function PersonalInformationForm({
             <button
               type="button"
               onClick={addLanguage}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              disabled={!isEditing}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               +
             </button>
@@ -91,13 +131,15 @@ export default function PersonalInformationForm({
                   className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full"
                 >
                   <span>{lang}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeLanguage(index)}
-                    className="hover:text-red-600"
-                  >
-                    ×
-                  </button>
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => removeLanguage(index)}
+                      className="hover:text-red-600"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -108,15 +150,15 @@ export default function PersonalInformationForm({
       {/* Academic Identity Section */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Academic Identity</h2>
-        {/* + (!isEditing ? "opacity-60 pointer-events-none" : "") */}
-        <div className={"grid grid-cols-1 md:grid-cols-2 gap-4 "}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">
               School Name
             </label>
             <input
               type="text"
-              disabled={true}
+              disabled={!isEditing}
+              value={personalDetails?.school_name || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -127,7 +169,8 @@ export default function PersonalInformationForm({
             </label>
             <input
               type="number"
-              disabled={true}
+              disabled={!isEditing}
+              value={personalDetails?.year_of_joining || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -136,7 +179,8 @@ export default function PersonalInformationForm({
             <label className="block text-sm font-medium mb-2">Program</label>
             <input
               type="text"
-              disabled={true}
+              disabled={!isEditing}
+              value={personalDetails?.program_name || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -147,7 +191,8 @@ export default function PersonalInformationForm({
             </label>
             <input
               type="text"
-              disabled={true}
+              disabled={!isEditing}
+              value={personalDetails?.specialization_name || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -156,7 +201,8 @@ export default function PersonalInformationForm({
             <label className="block text-sm font-medium mb-2">Major</label>
             <input
               type="text"
-              disabled={true}
+              disabled={!isEditing}
+              value={personalDetails?.major_name || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -165,7 +211,8 @@ export default function PersonalInformationForm({
             <label className="block text-sm font-medium mb-2">Minor</label>
             <input
               type="text"
-              disabled={true}
+              disabled={!isEditing}
+              value={personalDetails?.minor_name || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
           </div>

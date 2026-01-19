@@ -1,5 +1,8 @@
 "use client";
 
+import { useUser } from "@/lib/useUser";
+
+
 interface CareerOverviewFormProps {
   isEditing: boolean;
 }
@@ -7,6 +10,18 @@ interface CareerOverviewFormProps {
 export default function CareerOverviewForm({
   isEditing,
 }: CareerOverviewFormProps) {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  const profileDetails = user?.profile_details;
+
   return (
     <div className="space-y-8">
       {/* Career Objectives Section */}
@@ -19,6 +34,7 @@ export default function CareerOverviewForm({
           </label>
           <textarea
             disabled={!isEditing}
+            value={profileDetails?.brief_summary || ""}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed resize-none"
             placeholder="Write a brief summary about yourself..."
             rows={4}
@@ -32,6 +48,7 @@ export default function CareerOverviewForm({
           <input
             type="text"
             disabled={!isEditing}
+            value={profileDetails?.key_expertise || ""}
             placeholder="e.g. React, Node.js, Python"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
           />
@@ -46,6 +63,7 @@ export default function CareerOverviewForm({
           </label>
           <textarea
             disabled={!isEditing}
+            value={profileDetails?.career_objective || ""}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed resize-none"
             placeholder="Describe your career goals and aspirations..."
             rows={5}
@@ -58,6 +76,7 @@ export default function CareerOverviewForm({
           </label>
           <textarea
             disabled={!isEditing}
+            value={profileDetails?.hobbies_interests || ""}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed resize-none"
             placeholder="Share your hobbies and interests..."
             rows={4}
@@ -77,6 +96,7 @@ export default function CareerOverviewForm({
             <input
               type="text"
               disabled={!isEditing}
+              value={profileDetails?.dream_company || ""}
               placeholder="e.g. Google, Microsoft, Amazon"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
             />
@@ -89,6 +109,7 @@ export default function CareerOverviewForm({
             <input
               type="number"
               disabled={!isEditing}
+              value={profileDetails?.dream_package || ""}
               placeholder="e.g. 12"
               min="0"
               step="0.1"
@@ -97,8 +118,6 @@ export default function CareerOverviewForm({
           </div>
         </div>
       </div>
-
-
     </div>
   );
 }

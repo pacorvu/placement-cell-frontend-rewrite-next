@@ -6,33 +6,33 @@ const personalDetailsSchema = z.object({
   gender: z.string(),
   date_of_birth: z.string(),
   specially_abled: z.boolean(),
-  languages: z.string(),
+  languages: z.string().nullish().default(""),
   personal_email: z.string(),
   verification_type: z.string(),
-  profile_image: z.string(),
-  school_name: z.string(),
+  profile_image: z.string().nullish().default(""),
+  school_name: z.string().nullish().default(""),
   year_of_joining: z.number(),
   program_name: z.string(),
   specialization_name: z.string(),
   major_name: z.string(),
-  minor_name: z.string(),
+  minor_name: z.string().nullish().default(""),
 });
 
 const profileDetailsSchema = z.object({
-  brief_summary: z.string(),
-  key_expertise: z.string(),
-  hobbies_interests: z.string(),
-  career_objective: z.string(),
-  dream_package: z.number(),
-  dream_company: z.string(),
+  brief_summary: z.string().default(""),
+  key_expertise: z.string().default(""),
+  hobbies_interests: z.string().default(""),
+  career_objective: z.string().default(""),
+  dream_package: z.number().default(0),
+  dream_company: z.string().default(""),
 });
 
 const profileCommunicationSchema = z.object({
-  college_email: z.string(),
-  personal_email: z.string(),
-  phone_country_code: z.string(),
-  phone_number: z.string(),
-  links: z.object({}),
+  college_email: z.string().default(""),
+  personal_email: z.string().default(""),
+  phone_country_code: z.string().default(""),
+  phone_number: z.string().default(""),
+  links: z.object({}).default({}),
 });
 
 const parentDetailsSchema = z.object({
@@ -40,8 +40,8 @@ const parentDetailsSchema = z.object({
   name: z.string(),
   occupation: z.string(),
   organisation: z.string(),
-  email: z.string(),
-  phone_country_code: z.string(),
+  email: z.string().nullish().default(""),
+  phone_country_code: z.string().nullish().default(""),
   phone_number: z.string(),
 });
 
@@ -54,10 +54,10 @@ const educationHistorySchema = z.object({
   result: z.number(),
   result_type: z.string(),
   subjects: z.string(),
-  marksheet_file: z.string(),
-  gap_type: z.string(),
-  gap_duration_months: z.number(),
-  gap_reason: z.string(),
+  marksheet_file: z.string().nullish().default(""),
+  gap_type: z.string().nullish().default(""),
+  gap_duration_months: z.number().nullish().default(0),
+  gap_reason: z.string().nullish().default(""),
 });
 
 const semesterAcademicsSchema = z.object({
@@ -66,31 +66,31 @@ const semesterAcademicsSchema = z.object({
   result_in_sgpa: z.number(),
   closed_backlogs: z.number(),
   live_backlogs: z.number(),
-  provisional_result_upload_link: z.array(z.string()),
+  provisional_result_upload_link: z.array(z.string()).nullish().default([]),
 });
 
 const projectsSchema = z.object({
   title: z.string(),
   description: z.string(),
   skills: z.string(),
-  project_link: z.string(),
-  snaps: z.string(),
-  mentor_name: z.string(),
+  project_link: z.string().nullish().default(""),
+  snaps: z.string().nullish().default(""),
+  mentor_name: z.string().nullish().default(""),
 });
 
 const internshipsSchema = z.object({
   job_role: z.string(),
   organization: z.string(),
-  organization_details: z.string(),
+  organization_details: z.string().nullish().default(""),
   duration_months: z.number(),
   start_date: z.string(),
   end_date: z.string(),
   location: z.string(),
-  stipend: z.number(),
+  stipend: z.number().nullish().default(0),
   skills: z.string(),
   description: z.string(),
-  mentor_name: z.string(),
-  proof_document: z.string(),
+  mentor_name: z.string().nullish().default(""),
+  proof_document: z.string().nullish().default(""),
 });
 
 const trainingsSchema = z.object({
@@ -101,7 +101,7 @@ const trainingsSchema = z.object({
   end_date: z.string(),
   skills: z.string(),
   description: z.string(),
-  proof_document: z.string(),
+  proof_document: z.string().nullish().default(""),
 });
 
 const certificationsSchema = z.object({
@@ -109,10 +109,10 @@ const certificationsSchema = z.object({
   organization: z.string(),
   certification_type: z.string(),
   skills: z.string(),
-  score: z.string(),
+  score: z.string().nullish().default(""),
   issue_date: z.string(),
-  expiry_date: z.string(),
-  proof_document: z.string(),
+  expiry_date: z.string().nullish().default(""),
+  proof_document: z.string().nullish().default(""),
 });
 
 const publicationsSchema = z.object({
@@ -121,10 +121,10 @@ const publicationsSchema = z.object({
   publication_type: z.string(),
   publication_date: z.string(),
   author_count: z.number(),
-  mentor_name: z.string(),
+  mentor_name: z.string().nullish().default(""),
   skills: z.string(),
   description: z.string(),
-  evidence_document: z.string(),
+  evidence_document: z.string().nullish().default(""),
 });
 
 const extraCurricularActivitiesSchema = z.object({
@@ -134,10 +134,10 @@ const extraCurricularActivitiesSchema = z.object({
   organization: z.string(),
   start_date: z.string(),
   end_date: z.string(),
-  achievements: z.string(),
+  achievements: z.string().nullish().default(""),
   skills: z.string(),
   description: z.string(),
-  proof_document: z.string(),
+  proof_document: z.string().nullish().default(""),
 });
 
 const otherExperiencesSchema = z.object({
@@ -148,15 +148,28 @@ const otherExperiencesSchema = z.object({
   location: z.string(),
   skills: z.string(),
   description: z.string(),
-  proof_document: z.string(),
+  proof_document: z.string().nullish().default(""),
 });
 
 export const requestSchema = z.object({
   user_id: z.number(),
   role_name: z.string(),
   personal_details: personalDetailsSchema,
-  profile_details: profileDetailsSchema,
-  profile_communication: profileCommunicationSchema,
+  profile_details: profileDetailsSchema.nullish().default({
+    brief_summary: "",
+    key_expertise: "",
+    hobbies_interests: "",
+    career_objective: "",
+    dream_package: 0,
+    dream_company: "",
+  }),
+  profile_communication: profileCommunicationSchema.nullish().default({
+    college_email: "",
+    personal_email: "",
+    phone_country_code: "",
+    phone_number: "",
+    links: {},
+  }),
   parent_details: z.array(parentDetailsSchema),
   education_history: z.array(educationHistorySchema),
   semester_academics: z.array(semesterAcademicsSchema),

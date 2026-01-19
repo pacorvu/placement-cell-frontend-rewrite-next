@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useUser } from "@/lib/useUser";
+import { useState, useEffect } from "react";
 
 interface Education {
   id: number;
   institution: string;
   degree: string;
   field: string;
+  city: string;
   startYear: string;
   endYear: string;
   grade: string;
+  subjects: string;
 }
 
 interface EducationHistoryFormProps {
@@ -17,16 +20,38 @@ interface EducationHistoryFormProps {
 }
 
 export default function EducationHistoryForm({ isEditing }: EducationHistoryFormProps) {
+  const { user, isLoading } = useUser();
+
   const [educations, setEducations] = useState<Education[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     institution: "",
     degree: "",
     field: "",
+    city: "",
     startYear: "",
     endYear: "",
     grade: "",
+    subjects: "",
   });
+
+  // Populate educations from cached user data
+  useEffect(() => {
+    if (user?.education_history && user.education_history.length > 0) {
+      const mappedEducations = user.education_history.map((edu, index) => ({
+        id: index + 1,
+        institution: edu.institute_name,
+        degree: edu.education_level,
+        field: edu.board,
+        city: edu.city,
+        startYear: edu.year_of_passing ? String(edu.year_of_passing - 1) : "", // Approximate start year
+        endYear: edu.year_of_passing ? String(edu.year_of_passing) : "",
+        grade: `${edu.result} ${edu.result_type}`,
+        subjects: edu.subjects,
+      }));
+      setEducations(mappedEducations);
+    }
+  }, [user]);
 
   const handleAddEducation = () => {
     if (formData.institution && formData.degree) {
@@ -41,9 +66,11 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
         institution: "",
         degree: "",
         field: "",
+        city: "",
         startYear: "",
         endYear: "",
         grade: "",
+        subjects: "",
       });
       setShowAddForm(false);
     }
@@ -52,6 +79,18 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
   const handleDeleteEducation = (id: number) => {
     setEducations(educations.filter((edu) => edu.id !== id));
   };
+
+  if (isLoading) {
+    return (
+      <div className="card bg-base-100 shadow border border-base-300">
+        <div className="card-body">
+          <div className="flex items-center justify-center p-8">
+            <div className="text-gray-500">Loading education history...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card bg-base-100 shadow border border-base-300">
@@ -74,10 +113,18 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="font-bold text-lg">{edu.degree}</h3>
-                      <p className="text-base-content/80">{edu.institution}</p>
-                      <p className="text-base-content/60 text-sm">
-                        {edu.field} • {edu.startYear} - {edu.endYear}
+                      <p className="text-base-content/80">
+                        {edu.institution}
+                        {edu.city && `, ${edu.city}`}
                       </p>
+                      <p className="text-base-content/60 text-sm">
+                        {edu.field} • {edu.startYear || "N/A"} - {edu.endYear}
+                      </p>
+                      {edu.subjects && (
+                        <p className="text-base-content/60 text-sm">
+                          Subjects: {edu.subjects}
+                        </p>
+                      )}
                       <p className="text-base-content/60 text-sm">
                         Grade: {edu.grade}
                       </p>
@@ -114,6 +161,7 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
             <button
               onClick={() => setShowAddForm(true)}
               className="btn btn-outline btn-primary"
+              disabled={!isEditing}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -132,7 +180,7 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
           </div>
         )}
 
-        {educations.length > 0 && !showAddForm && (
+        {educations.length > 0 && !showAddForm && isEditing && (
           <button
             onClick={() => setShowAddForm(true)}
             className="btn btn-outline btn-primary btn-sm"
@@ -179,11 +227,13 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
 
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-medium text-base-content/70">Degree *</span>
+                    <span className="label-text font-medium text-base-content/70">
+                      Education Level *
+                    </span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Bachelor of Technology"
+                    placeholder="e.g. 10th, 12th, Bachelor's, Master's"
                     className="input input-bordered bg-base-100 mt-2"
                     value={formData.degree}
                     onChange={(e) =>
@@ -194,15 +244,32 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
 
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-medium text-base-content/70">Field of Study</span>
+                    <span className="label-text font-medium text-base-content/70">
+                      Board/University
+                    </span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Computer Science"
+                    placeholder="e.g. CBSE, ICSE, VTU"
                     className="input input-bordered bg-base-100 mt-2"
                     value={formData.field}
                     onChange={(e) =>
                       setFormData({ ...formData, field: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-medium text-base-content/70">City</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Bangalore"
+                    className="input input-bordered bg-base-100 mt-2"
+                    value={formData.city}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
                     }
                   />
                 </div>
@@ -226,24 +293,9 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
 
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-medium text-base-content/70">Start Year</span>
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="2020"
-                    className="input input-bordered bg-base-100 mt-2"
-                    value={formData.startYear}
-                    onChange={(e) =>
-                      setFormData({ ...formData, startYear: e.target.value })
-                    }
-                    min="1990"
-                    max="2030"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium text-base-content/70">End Year</span>
+                    <span className="label-text font-medium text-base-content/70">
+                      Year of Passing
+                    </span>
                   </label>
                   <input
                     type="number"
@@ -257,6 +309,23 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
                     max="2035"
                   />
                 </div>
+
+                <div className="form-control md:col-span-2">
+                  <label className="label">
+                    <span className="label-text font-medium text-base-content/70">
+                      Subjects (comma separated)
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Mathematics, Physics, Chemistry"
+                    className="input input-bordered bg-base-100 mt-2"
+                    value={formData.subjects}
+                    onChange={(e) =>
+                      setFormData({ ...formData, subjects: e.target.value })
+                    }
+                  />
+                </div>
               </div>
 
               <div className="flex gap-2 justify-end mt-4">
@@ -267,9 +336,11 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
                       institution: "",
                       degree: "",
                       field: "",
+                      city: "",
                       startYear: "",
                       endYear: "",
                       grade: "",
+                      subjects: "",
                     });
                   }}
                   className="btn btn-ghost"
@@ -287,9 +358,6 @@ export default function EducationHistoryForm({ isEditing }: EducationHistoryForm
             </div>
           </div>
         )}
-
-        {/* Edit Button */}
-
       </div>
     </div>
   );

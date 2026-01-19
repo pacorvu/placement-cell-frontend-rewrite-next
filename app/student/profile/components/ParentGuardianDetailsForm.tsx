@@ -1,10 +1,36 @@
 "use client";
 
+import { useUser } from "@/lib/useUser";
+
+
 interface ParentGuardianDetailsFormProps {
   isEditing: boolean;
 }
 
-export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianDetailsFormProps) {
+export default function ParentGuardianDetailsForm({
+  isEditing
+}: ParentGuardianDetailsFormProps) {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  // Extract parent details by type
+  const fatherDetails = user?.parent_details?.find(
+    (parent) => parent.parent_type === "Father"
+  );
+  const motherDetails = user?.parent_details?.find(
+    (parent) => parent.parent_type === "Mother"
+  );
+  const guardianDetails = user?.parent_details?.find(
+    (parent) => parent.parent_type === "Guardian"
+  );
+
   return (
     <div className="space-y-6">
       {/* Father's Details Section */}
@@ -25,8 +51,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="text"
                 placeholder="Father's Name"
+                value={fatherDetails?.name || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
 
@@ -37,8 +64,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="text"
                 placeholder="Occupation"
+                value={fatherDetails?.occupation || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
 
@@ -49,8 +77,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="text"
                 placeholder="Organisation Name"
+                value={fatherDetails?.organisation || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -63,15 +92,16 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <div className="flex gap-2 mt-2">
                 <input
                   type="text"
-                  defaultValue="+91"
+                  value={fatherDetails?.phone_country_code || "+91"}
                   className="input input-bordered w-20 bg-base-100"
-                  disabled
+                  disabled={!isEditing}
                 />
                 <input
                   type="tel"
                   placeholder="9876543210"
+                  value={fatherDetails?.phone_number || ""}
                   className="input input-bordered flex-1 bg-base-100"
-                  disabled
+                  disabled={!isEditing}
                 />
               </div>
             </div>
@@ -83,8 +113,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="email"
                 placeholder="father@email.com"
+                value={fatherDetails?.email || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -109,8 +140,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="text"
                 placeholder="Mother's Name"
+                value={motherDetails?.name || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
 
@@ -121,8 +153,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="text"
                 placeholder="Occupation"
+                value={motherDetails?.occupation || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
 
@@ -133,8 +166,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="text"
                 placeholder="Organisation Name"
+                value={motherDetails?.organisation || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -147,15 +181,16 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <div className="flex gap-2 mt-2">
                 <input
                   type="text"
-                  defaultValue="+91"
+                  value={motherDetails?.phone_country_code || "+91"}
                   className="input input-bordered w-20 bg-base-100"
-                  disabled
+                  disabled={!isEditing}
                 />
                 <input
                   type="tel"
                   placeholder="9876543210"
+                  value={motherDetails?.phone_number || ""}
                   className="input input-bordered flex-1 bg-base-100"
-                  disabled
+                  disabled={!isEditing}
                 />
               </div>
             </div>
@@ -167,8 +202,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="email"
                 placeholder="mother@email.com"
+                value={motherDetails?.email || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -193,8 +229,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="text"
                 placeholder="Guardian's Name"
+                value={guardianDetails?.name || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
 
@@ -205,8 +242,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="text"
                 placeholder="Occupation"
+                value={guardianDetails?.occupation || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
 
@@ -217,8 +255,9 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <input
                 type="text"
                 placeholder="Organisation Name"
+                value={guardianDetails?.organisation || ""}
                 className="input input-bordered bg-base-100 mt-2"
-                disabled
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -231,29 +270,33 @@ export default function ParentGuardianDetailsForm({ isEditing }: ParentGuardianD
               <div className="flex gap-2 mt-2">
                 <input
                   type="text"
-                  defaultValue="+91"
+                  value={guardianDetails?.phone_country_code || "+91"}
                   className="input input-bordered w-20 bg-base-100"
-                  disabled
+                  disabled={!isEditing}
                 />
                 <input
                   type="tel"
                   placeholder="9876543210"
+                  value={guardianDetails?.phone_number || ""}
                   className="input input-bordered flex-1 bg-base-100"
-                  disabled
+                  disabled={!isEditing}
                 />
               </div>
             </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium text-base-content/70">Email ID</span>
-              </label>
-              <input
-                type="email"
-                placeholder="guardian@email.com"
-                className="input input-bordered bg-base-100 mt-2"
-                disabled
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium text-base-content/70">Email ID</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder="guardian@email.com"
+                  value={guardianDetails?.email || ""}
+                  className="input input-bordered bg-base-100 mt-2"
+                  disabled={!isEditing}
+                />
+              </div>
             </div>
           </div>
         </div>
