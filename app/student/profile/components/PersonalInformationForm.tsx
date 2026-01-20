@@ -17,26 +17,13 @@ export default function PersonalInformationForm({
 
   // Populate form with user data
   useEffect(() => {
-    if (user?.personal_details) {
-      // Parse languages string to array
-      if (user.personal_details.languages) {
-        try {
-          // Try parsing as JSON array first
-          const parsed = JSON.parse(user.personal_details.languages);
-          if (Array.isArray(parsed)) {
-            setLanguages(parsed);
-          } else {
-            setLanguages([]);
-          }
-        } catch {
-          // If not JSON, try comma-separated
-          const langs = user.personal_details.languages
-            .split(",")
-            .map((l) => l.trim())
-            .filter(Boolean);
-          setLanguages(langs);
-        }
-      }
+    const langs = user?.personal_details?.languages;
+
+    if (Array.isArray(langs)) {
+      // Filter out null/empty strings just in case
+      setLanguages(langs.filter((l): l is string => Boolean(l && l.trim())));
+    } else {
+      setLanguages([]);
     }
   }, [user]);
 

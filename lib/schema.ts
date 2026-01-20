@@ -6,7 +6,7 @@ const personalDetailsSchema = z.object({
   gender: z.string(),
   date_of_birth: z.string(),
   specially_abled: z.boolean(),
-  languages: z.string().nullish().default(""),
+  languages: z.array(z.string().nullish().default("")),
   personal_email: z.string(),
   verification_type: z.string(),
   profile_image: z.string().nullish().default(""),
@@ -197,5 +197,7 @@ export type Internships = z.infer<typeof internshipsSchema>;
 export type Trainings = z.infer<typeof trainingsSchema>;
 export type Certifications = z.infer<typeof certificationsSchema>;
 export type Publications = z.infer<typeof publicationsSchema>;
-export type ExtraCurricularActivities = z.infer<typeof extraCurricularActivitiesSchema>;
+export type ExtraCurricularActivities = z.infer<
+  typeof extraCurricularActivitiesSchema
+>;
 export type OtherExperiences = z.infer<typeof otherExperiencesSchema>;

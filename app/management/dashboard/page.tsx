@@ -399,7 +399,7 @@ export default function PlacementAnalytics() {
   const Content = () => {
     const handleLogout = useHandleLogout();
     return (
-      <div className="min-h-screen bg-background p-6 space-y-6">
+      <div className="min-h-screen bg-background flex flex-col space-y-6 management">
         <header
           className="bg-base-100 shadow-sm border-b border-base-300 "
           data-theme="light"

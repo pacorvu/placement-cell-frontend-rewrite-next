@@ -23,7 +23,7 @@ export const userService = {
 
       // Validate the response data against the schema
       const validatedData = requestSchema.parse(response.data);
-
+      // const validatedData = response.data;
       userCache.set(validatedData);
       return validatedData;
     } catch (error) {
