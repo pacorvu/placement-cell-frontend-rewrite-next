@@ -8,7 +8,7 @@ const personalDetailsSchema = z.object({
   specially_abled: z.boolean(),
   languages: z.array(z.string().nullish().default("")),
   personal_email: z.string(),
-  verification_type: z.string(),
+  verification_type: z.string().nullish().default(""), // ✅ Added nullish
   profile_image: z.string().nullish().default(""),
   school_name: z.string().nullish().default(""),
   year_of_joining: z.number(),
@@ -21,7 +21,7 @@ const personalDetailsSchema = z.object({
 const profileDetailsSchema = z.object({
   brief_summary: z.string().default(""),
   key_expertise: z.string().default(""),
-  hobbies_interests: z.string().default(""),
+  hobbies_interests: z.array(z.string()).default([]), // ✅ Changed to array
   career_objective: z.string().default(""),
   dream_package: z.number().default(0),
   dream_company: z.string().default(""),
@@ -66,15 +66,15 @@ const semesterAcademicsSchema = z.object({
   result_in_sgpa: z.number(),
   closed_backlogs: z.number(),
   live_backlogs: z.number(),
-  provisional_result_upload_link: z.array(z.string()).nullish().default([]),
+  provisional_result_upload_link: z.string().nullish().default(""), // ✅ Changed to string
 });
 
 const projectsSchema = z.object({
   title: z.string(),
-  description: z.string(),
-  skills: z.string(),
+  description: z.string().nullish().default(""), // ✅ Added nullish
+  skills: z.array(z.string()).default([]), // ✅ Changed to array
   project_link: z.string().nullish().default(""),
-  snaps: z.string().nullish().default(""),
+  snaps: z.array(z.string()).nullish().default([]), // ✅ Changed to array
   mentor_name: z.string().nullish().default(""),
 });
 
@@ -87,8 +87,8 @@ const internshipsSchema = z.object({
   end_date: z.string(),
   location: z.string(),
   stipend: z.number().nullish().default(0),
-  skills: z.string(),
-  description: z.string(),
+  skills: z.array(z.string()).default([]), // ✅ Changed to array
+  description: z.string().nullish().default(""), // ✅ Added nullish
   mentor_name: z.string().nullish().default(""),
   proof_document: z.string().nullish().default(""),
 });
@@ -99,8 +99,8 @@ const trainingsSchema = z.object({
   training_type: z.string(),
   start_date: z.string(),
   end_date: z.string(),
-  skills: z.string(),
-  description: z.string(),
+  skills: z.array(z.string()).default([]), // ✅ Changed to array
+  description: z.string().nullish().default(""), // ✅ Added nullish
   proof_document: z.string().nullish().default(""),
 });
 
@@ -108,8 +108,8 @@ const certificationsSchema = z.object({
   title: z.string(),
   organization: z.string(),
   certification_type: z.string(),
-  skills: z.string(),
-  score: z.string().nullish().default(""),
+  skills: z.array(z.string()).default([]), // ✅ Changed to array
+  score: z.union([z.string(), z.number()]).nullish().default(""), // ✅ Allow string or number
   issue_date: z.string(),
   expiry_date: z.string().nullish().default(""),
   proof_document: z.string().nullish().default(""),
@@ -122,8 +122,8 @@ const publicationsSchema = z.object({
   publication_date: z.string(),
   author_count: z.number(),
   mentor_name: z.string().nullish().default(""),
-  skills: z.string(),
-  description: z.string(),
+  skills: z.array(z.string()).default([]), // ✅ Changed to array
+  description: z.string().nullish().default(""), // ✅ Added nullish
   evidence_document: z.string().nullish().default(""),
 });
 
@@ -134,9 +134,9 @@ const extraCurricularActivitiesSchema = z.object({
   organization: z.string(),
   start_date: z.string(),
   end_date: z.string(),
-  achievements: z.string().nullish().default(""),
-  skills: z.string(),
-  description: z.string(),
+  achievements: z.array(z.string()).nullish().default([]), // ✅ Changed to array
+  skills: z.array(z.string()).default([]), // ✅ Changed to array
+  description: z.string().nullish().default(""), // ✅ Added nullish
   proof_document: z.string().nullish().default(""),
 });
 
@@ -144,10 +144,10 @@ const otherExperiencesSchema = z.object({
   title: z.string(),
   organization: z.string(),
   start_date: z.string(),
-  end_date: z.string(),
+  end_date: z.string().nullish().default(""), // ✅ Added nullish
   location: z.string(),
-  skills: z.string(),
-  description: z.string(),
+  skills: z.array(z.string()).default([]), // ✅ Changed to array
+  description: z.string().nullish().default(""), // ✅ Added nullish
   proof_document: z.string().nullish().default(""),
 });
 
@@ -158,7 +158,7 @@ export const requestSchema = z.object({
   profile_details: profileDetailsSchema.nullish().default({
     brief_summary: "",
     key_expertise: "",
-    hobbies_interests: "",
+    hobbies_interests: [], // ✅ Changed default to array
     career_objective: "",
     dream_package: 0,
     dream_company: "",
@@ -182,10 +182,8 @@ export const requestSchema = z.object({
   other_experiences: z.array(otherExperiencesSchema),
 });
 
-// Export the TypeScript type inferred from the schema
+// Export types (unchanged)
 export type UserData = z.infer<typeof requestSchema>;
-
-// Export individual types if needed
 export type PersonalDetails = z.infer<typeof personalDetailsSchema>;
 export type ProfileDetails = z.infer<typeof profileDetailsSchema>;
 export type ProfileCommunication = z.infer<typeof profileCommunicationSchema>;
