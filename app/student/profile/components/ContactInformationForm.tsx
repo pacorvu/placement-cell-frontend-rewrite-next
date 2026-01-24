@@ -2,13 +2,34 @@
 
 import { useUser } from "@/lib/useUser";
 import { useState, useEffect } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
+import { AxiosError } from "axios";
+
+// Zod schema for validation - now also used for runtime checks
+const urlSchema = z.string().url().or(z.literal(""));
+
+const contactInformationSchema = z.object({
+  personal_email: z.string().email("Invalid email address").or(z.literal("")),
+  links: z.object({
+    linkedin: urlSchema,
+    portfolio: urlSchema,
+    github: urlSchema,
+    other: urlSchema,
+  }),
+});
+
+type ContactInformationData = z.infer<typeof contactInformationSchema>;
 
 interface ContactInformationFormProps {
   isEditing: boolean;
+  onSaveComplete?: () => void;
 }
 
 export default function ContactInformationForm({
   isEditing,
+  onSaveComplete,
 }: ContactInformationFormProps) {
   const { user, isLoading } = useUser();
 
@@ -19,6 +40,9 @@ export default function ContactInformationForm({
     github: "",
     other: "",
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Populate form with user data
   useEffect(() => {
@@ -40,15 +64,80 @@ export default function ContactInformationForm({
 
   const updateLink = (key: string, value: string) => {
     setLinks({ ...links, [key]: value });
+    // Clear error for this field
+    if (errors[`links.${key}`]) {
+      const newErrors = { ...errors };
+      delete newErrors[`links.${key}`];
+      setErrors(newErrors);
+    }
   };
 
+  // Use Zod for URL validation
   const isValidUrl = (url: string): boolean => {
     if (!url) return false;
+    return urlSchema.safeParse(url).success;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user?.user_id) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrors({});
+
     try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
+      // Prepare data
+      const data: ContactInformationData = {
+        personal_email: personalEmail,
+        links: {
+          linkedin: links.linkedin,
+          portfolio: links.portfolio,
+          github: links.github,
+          other: links.other,
+        },
+      };
+
+      // Validate with Zod
+      const validatedData = contactInformationSchema.parse(data);
+
+      // Make PATCH request using axios
+      const response = await api.patch(
+        `/profile-communication/user/${user.user_id}`,
+        validatedData
+      );
+
+      toast.success("Contact information updated successfully");
+
+      // Call the callback if provided
+      if (onSaveComplete) {
+        onSaveComplete();
+      }
+
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Handle validation errors
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          const path = err.path.join(".");
+          fieldErrors[path] = err.message;
+        });
+        setErrors(fieldErrors);
+        toast.error("Please fix the validation errors");
+      } else if (error instanceof AxiosError) {
+        // Handle axios errors
+        const errorMessage = error.response?.data?.message || error.message || "Failed to update contact information";
+        toast.error(errorMessage);
+      } else if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("An unexpected error occurred");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -63,7 +152,7 @@ export default function ContactInformationForm({
   const profileCommunication = user?.profile_communication;
 
   return (
-    <div className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8">
       {/* Contact Information Section */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Contact Information</h2>
@@ -93,10 +182,21 @@ export default function ContactInformationForm({
               type="email"
               placeholder="personal@email.com"
               value={personalEmail}
-              onChange={(e) => setPersonalEmail(e.target.value)}
+              onChange={(e) => {
+                setPersonalEmail(e.target.value);
+                if (errors.personal_email) {
+                  const newErrors = { ...errors };
+                  delete newErrors.personal_email;
+                  setErrors(newErrors);
+                }
+              }}
               disabled={!isEditing}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${errors.personal_email ? "border-red-500" : "border-gray-300"
+                }`}
             />
+            {errors.personal_email && (
+              <p className="text-xs text-red-500 mt-1">{errors.personal_email}</p>
+            )}
           </div>
 
           <div>
@@ -146,9 +246,13 @@ export default function ContactInformationForm({
               value={links.linkedin}
               onChange={(e) => updateLink("linkedin", e.target.value)}
               disabled={!isEditing}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${errors["links.linkedin"] ? "border-red-500" : "border-gray-300"
+                }`}
             />
-            {links.linkedin && isValidUrl(links.linkedin) && (
+            {errors["links.linkedin"] && (
+              <p className="text-xs text-red-500 mt-1">{errors["links.linkedin"]}</p>
+            )}
+            {links.linkedin && isValidUrl(links.linkedin) && !errors["links.linkedin"] && (
               <a
                 href={links.linkedin}
                 target="_blank"
@@ -171,9 +275,13 @@ export default function ContactInformationForm({
               value={links.portfolio}
               onChange={(e) => updateLink("portfolio", e.target.value)}
               disabled={!isEditing}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${errors["links.portfolio"] ? "border-red-500" : "border-gray-300"
+                }`}
             />
-            {links.portfolio && isValidUrl(links.portfolio) && (
+            {errors["links.portfolio"] && (
+              <p className="text-xs text-red-500 mt-1">{errors["links.portfolio"]}</p>
+            )}
+            {links.portfolio && isValidUrl(links.portfolio) && !errors["links.portfolio"] && (
               <a
                 href={links.portfolio}
                 target="_blank"
@@ -196,9 +304,13 @@ export default function ContactInformationForm({
               value={links.github}
               onChange={(e) => updateLink("github", e.target.value)}
               disabled={!isEditing}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${errors["links.github"] ? "border-red-500" : "border-gray-300"
+                }`}
             />
-            {links.github && isValidUrl(links.github) && (
+            {errors["links.github"] && (
+              <p className="text-xs text-red-500 mt-1">{errors["links.github"]}</p>
+            )}
+            {links.github && isValidUrl(links.github) && !errors["links.github"] && (
               <a
                 href={links.github}
                 target="_blank"
@@ -221,9 +333,13 @@ export default function ContactInformationForm({
               value={links.other}
               onChange={(e) => updateLink("other", e.target.value)}
               disabled={!isEditing}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${errors["links.other"] ? "border-red-500" : "border-gray-300"
+                }`}
             />
-            {links.other && isValidUrl(links.other) && (
+            {errors["links.other"] && (
+              <p className="text-xs text-red-500 mt-1">{errors["links.other"]}</p>
+            )}
+            {links.other && isValidUrl(links.other) && !errors["links.other"] && (
               <a
                 href={links.other}
                 target="_blank"
@@ -237,6 +353,19 @@ export default function ContactInformationForm({
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Save Button */}
+      {isEditing && (
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      )}
+    </form>
   );
 }
