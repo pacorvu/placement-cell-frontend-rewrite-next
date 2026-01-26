@@ -15,6 +15,10 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
 } from "recharts";
 
 export default function PlacementDashboard() {
@@ -218,21 +222,58 @@ export default function PlacementDashboard() {
           </div>
         </div>
 
-        {/* CTC Chart */}
-        <div className="card bg-base-200 shadow-md mb-8">
-          <div className="card-body">
-            <h3 className="card-title text-lg mb-4">
-              Placement Frequency by CTC Range
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={ctcData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="range" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#3B82F6" />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* CTC Chart Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="card bg-base-200 shadow-md">
+            <div className="card-body">
+              <h3 className="card-title text-lg mb-4 text-warning">
+                $ CTC Financial Summary (Cost to Company)
+              </h3>
+              <p className="text-xs text-base-content/50 mb-4">Placement Frequency by CTC Range</p>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={ctcData}>
+                  <defs>
+                    <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="range" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'var(--fallback-b1,oklch(var(--b1)))', borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Area type="monotone" dataKey="count" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card bg-base-200 shadow-md">
+            <div className="card-body">
+              <h3 className="card-title text-lg mb-4 text-success">
+                Placement Trends
+              </h3>
+              <p className="text-xs text-base-content/50 mb-4">Offers over time (Mock Data)</p>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={[
+                  { month: 'Jan', offers: 2 },
+                  { month: 'Feb', offers: 5 },
+                  { month: 'Mar', offers: 8 },
+                  { month: 'Apr', offers: 12 },
+                  { month: 'May', offers: 20 },
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'var(--fallback-b1,oklch(var(--b1)))', borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Line type="monotone" dataKey="offers" stroke="#10B981" strokeWidth={4} activeDot={{ r: 8 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
