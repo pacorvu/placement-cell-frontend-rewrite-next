@@ -144,7 +144,7 @@
 @plugin "daisyui/theme" {
   name: "dark";
   default: false;
-  prefersdark: true;
+  prefersdark: false;
   color-scheme: "dark";
 
   /* Base colors - variations of RVU dark blue (secondary from light) */

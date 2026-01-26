@@ -67,7 +67,7 @@ export default function AlumniReferralPage() {
                 provided.
               </p>
               <div className="flex gap-4 justify-center">
-                <Link href="/placement/alumni" className="btn btn-primary">
+                <Link href="/alumni/dashboard" className="btn btn-primary">
                   Back to Dashboard
                 </Link>
                 <button
@@ -109,7 +109,7 @@ export default function AlumniReferralPage() {
         <div className="max-w-3xl mx-auto px-4 lg:px-8">
           <div className="flex items-center gap-2 mb-4">
             <Link
-              href="/placement/alumni"
+              href="/alumni/dashboard"
               className="btn btn-ghost btn-sm gap-2"
             >
               <svg

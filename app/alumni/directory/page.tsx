@@ -42,7 +42,7 @@ export default function AlumniDirectoryPage() {
         <div className="max-w-7xl mx-auto px-4 lg:px-8">
           <div className="flex items-center gap-2 mb-4">
             <Link
-              href="/placement/alumni"
+              href="/alumni/dashboard"
               className="btn btn-ghost btn-sm gap-2"
             >
               <svg
@@ -59,7 +59,7 @@ export default function AlumniDirectoryPage() {
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Back to List
+              Back to Dashboard
             </Link>
           </div>
           <h1 className="text-4xl lg:text-5xl font-bold mb-4">
@@ -146,7 +146,7 @@ export default function AlumniDirectoryPage() {
             {filteredAlumni.map((alumni) => (
               <Link
                 key={alumni.id}
-                href={`/placement/alumni/${alumni.usn}`}
+                href={`/alumni/${alumni.usn}`}
                 className="card bg-base-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 <div className="card-body">

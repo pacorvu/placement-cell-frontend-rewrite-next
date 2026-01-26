@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import ThemeToggle from "../../../components/ThemeToggle";
+import ThemeToggle from "../../components/ThemeToggle";
 
 export default function AlumniLayout({
   children,
@@ -67,19 +67,19 @@ export default function AlumniLayout({
                 className="menu menu-sm dropdown-content mt-3 z-10 p-2 shadow bg-base-100 rounded-box w-56"
               >
                 <li>
-                  <Link href="/placement/alumni">Dashboard</Link>
+                  <Link href="/alumni/dashboard">Dashboard</Link>
                 </li>
                 <li>
-                  <Link href="/placement/alumni-directory">Directory</Link>
+                  <Link href="/alumni/directory">Directory</Link>
                 </li>
                 <li>
-                  <Link href="/placement/alumni-projects">Student Projects</Link>
+                  <Link href="/alumni/projects">Student Projects</Link>
                 </li>
                 <li>
-                  <Link href="/placement/alumni-referral">Refer HR</Link>
+                  <Link href="/alumni/referral">Refer HR</Link>
                 </li>
                 <li>
-                  <Link href="/placement/alumni/profile">Profile</Link>
+                  <Link href="/alumni/profile">Profile</Link>
                 </li>
               </ul>
             </div>
@@ -94,19 +94,19 @@ export default function AlumniLayout({
           <div className="navbar-center hidden lg:flex">
             <ul className="menu menu-horizontal px-1">
               <li>
-                <Link href="/placement/alumni">Dashboard</Link>
+                <Link href="/alumni/dashboard">Dashboard</Link>
               </li>
               <li>
-                <Link href="/placement/alumni-directory">Directory</Link>
+                <Link href="/alumni/directory">Directory</Link>
               </li>
               <li>
-                <Link href="/placement/alumni-projects">Student Projects</Link>
+                <Link href="/alumni/projects">Student Projects</Link>
               </li>
               <li>
-                <Link href="/placement/alumni-referral">Refer HR</Link>
+                <Link href="/alumni/referral">Refer HR</Link>
               </li>
               <li>
-                <Link href="/placement/alumni/profile">Profile</Link>
+                <Link href="/alumni/profile">Profile</Link>
               </li>
             </ul>
           </div>

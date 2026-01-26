@@ -24,7 +24,7 @@ export default function AlumniProfilePage({ params }: AlumniProfilePageProps) {
               <p className="text-base-content/60 mb-6">
                 The alumniprofile you're looking for doesn't exist.
               </p>
-              <Link href="/placement/alumni-directory" className="btn btn-primary">
+              <Link href="/alumni/directory" className="btn btn-primary">
                 Back to Directory
               </Link>
             </div>
@@ -40,7 +40,7 @@ export default function AlumniProfilePage({ params }: AlumniProfilePageProps) {
       <div className="bg-base-200 py-8">
         <div className="max-w-7xl mx-auto px-4 lg:px-8">
           <Link
-            href="/placement/alumni-directory"
+            href="/alumni/directory"
             className="btn btn-ghost btn-sm gap-2 mb-4"
           >
             <svg

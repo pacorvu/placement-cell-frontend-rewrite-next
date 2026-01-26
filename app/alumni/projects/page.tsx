@@ -135,7 +135,7 @@ export default function AlumniProjectsPage() {
               >
                 <div className="card-body">
                   {/* Thumbnail Placeholder */}
-                  <div className="bg-gradient-to-br from-base-300 to-base-content/10 rounded-lg h-40 flex items-center justify-center mb-4">
+                  <div className="bg-linear-to-br from-base-300 to-base-content/10 rounded-lg h-40 flex items-center justify-center mb-4">
                     <div className="text-6xl font-bold text-base-content/20">
                       {project.title
                         .split(" ")
