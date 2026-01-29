@@ -1,0 +1,1014 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { z } from "zod";
+import { api } from "@/lib/api";
+
+// ==================== SCHEMAS ====================
+const trainingItemSchema = z.object({
+	created_at: z.string().datetime(),
+	description: z.string(),
+	end_date: z.string(),
+	id: z.number().int(),
+	institution: z.string(),
+	proof_document: z.string(),
+	proof_document_signed_url: z.string(),
+	skills: z.array(z.string()),
+	start_date: z.string(),
+	title: z.string(),
+	training_type: z.string(),
+	updated_at: z.string().datetime(),
+	user_id: z.number().int(),
+	usn: z.string()
+});
+
+const getTrainingsResponseSchema = z.array(trainingItemSchema);
+
+const createTrainingsRequestSchema = z.object({
+	description: z.string().nullable(),
+	end_date: z.string().nullable(),
+	institution: z.string(),
+	proof_document: z.string().nullable(),
+	skills: z.array(z.string()).nullable(),
+	start_date: z.string().nullable(),
+	title: z.string(),
+	training_type: z.string().nullable(),
+	user_id: z.number().int()
+});
+
+const updateTrainingsRequestSchema = z.object({
+	description: z.string().nullable(),
+	end_date: z.string().nullable(),
+	institution: z.string().nullable(),
+	proof_document: z.string().nullable(),
+	skills: z.array(z.string()).nullable(),
+	start_date: z.string().nullable(),
+	title: z.string().nullable(),
+	training_type: z.string().nullable()
+});
+
+type TrainingItem = z.infer<typeof trainingItemSchema>;
+type GetTrainingsResponse = z.infer<typeof getTrainingsResponseSchema>;
+type CreateTrainingsRequest = z.infer<typeof createTrainingsRequestSchema>;
+type UpdateTrainingsRequest = z.infer<typeof updateTrainingsRequestSchema>;
+
+// Form values type for create
+type CreateFormValues = {
+	title: string;
+	institution: string;
+	training_type: string | null;
+	start_date: string | null;
+	end_date: string | null;
+	skills: string[];
+	description: string | null;
+	proof_document: File | null;
+};
+
+// Form values type for update
+type UpdateFormValues = {
+	title: string | null;
+	institution: string | null;
+	training_type: string | null;
+	start_date: string | null;
+	end_date: string | null;
+	skills: string[];
+	description: string | null;
+	proof_document: File | null;
+};
+
+// ==================== FIELD PERMISSIONS CONFIG ====================
+const FIELD_PERMISSIONS = {
+	description: true,
+	end_date: true,
+	institution: true,
+	proof_document: true,
+	skills: true,
+	start_date: true,
+	title: true,
+	training_type: true
+} as const;
+
+// ==================== HELPER COMPONENTS ====================
+interface SkillsInputProps {
+	value: string[];
+	onChange: (value: string[]) => void;
+	disabled: boolean;
+}
+
+function SkillsInput({ value, onChange, disabled }: SkillsInputProps) {
+	const [skillInput, setSkillInput] = useState("");
+
+	const addSkill = () => {
+		if (skillInput.trim() && !value.includes(skillInput.trim())) {
+			onChange([...value, skillInput.trim()]);
+			setSkillInput("");
+		}
+	};
+
+	const removeSkill = (index: number) => {
+		onChange(value.filter((_, i) => i !== index));
+	};
+
+	return (
+		<div>
+			<div className="flex gap-2 mb-2">
+				<input
+					type="text"
+					value={skillInput}
+					onChange={(e) => setSkillInput(e.target.value)}
+					placeholder="Add a skill (e.g., React, Python)"
+					disabled={disabled}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") {
+							e.preventDefault();
+							addSkill();
+						}
+					}}
+					className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+				/>
+				<button
+					type="button"
+					onClick={addSkill}
+					disabled={disabled || !skillInput.trim()}
+					className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+				>
+					Add
+				</button>
+			</div>
+			{value.length > 0 && (
+				<div className="flex flex-wrap gap-2">
+					{value.map((skill, index) => (
+						<div
+							key={index}
+							className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2"
+						>
+							<span className="text-sm">{skill}</span>
+							<button
+								type="button"
+								onClick={() => removeSkill(index)}
+								disabled={disabled}
+								className="text-blue-600 hover:text-blue-800 font-bold disabled:cursor-not-allowed"
+							>
+								×
+							</button>
+						</div>
+					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
+interface FormFieldProps {
+	label: string;
+	htmlFor?: string;
+	error?: string;
+	required?: boolean;
+	children: React.ReactNode;
+}
+
+function FormField({
+	label,
+	htmlFor,
+	error,
+	required,
+	children
+}: FormFieldProps) {
+	return (
+		<div>
+			<label
+				htmlFor={htmlFor}
+				className="block text-sm font-medium text-gray-700 mb-1"
+			>
+				{label}
+				{required && <span className="text-red-500 ml-1">*</span>}
+			</label>
+			{children}
+			{error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+		</div>
+	);
+}
+
+// ==================== ADD NEW TRAINING FORM ====================
+interface AddTrainingFormProps {
+	userId: number;
+	onSuccess?: () => void;
+	onError?: (error: any) => void;
+}
+
+function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
+	const queryClient = useQueryClient();
+	const [isExpanded, setIsExpanded] = useState(false);
+
+	// Initial empty form values
+	const initialFormValues: CreateFormValues = {
+		description: null,
+		end_date: null,
+		institution: "",
+		proof_document: null,
+		skills: [],
+		start_date: null,
+		title: "",
+		training_type: null
+	};
+
+	const [formValues, setFormValues] =
+		useState<CreateFormValues>(initialFormValues);
+	const [errors, setErrors] = useState<
+		Partial<Record<keyof CreateFormValues, string>>
+	>({});
+	// Create mutation - using FormData
+	const createMutation = useMutation({
+		mutationFn: async (values: CreateFormValues) => {
+			console.log("=== CREATING NEW TRAINING ===");
+			console.log("Values:", values);
+
+			// Create FormData
+			const formData = new FormData();
+
+			formData.append("user_id", userId.toString());
+			formData.append("title", values.title);
+			formData.append("institution", values.institution);
+
+			if (values.training_type !== null)
+				formData.append("training_type", values.training_type);
+			if (values.start_date !== null)
+				formData.append("start_date", values.start_date);
+			if (values.end_date !== null)
+				formData.append("end_date", values.end_date);
+			if (values.description !== null)
+				formData.append("description", values.description);
+
+			// Handle skills array
+			if (values.skills.length > 0) {
+				formData.append("skills", values.skills.join(","));
+			}
+
+			// Handle file separately
+			if (values.proof_document) {
+				formData.append("proof_document", values.proof_document);
+			}
+
+			// Log FormData contents
+			console.log("FormData contents:");
+			for (const [key, value] of formData.entries()) {
+				console.log(`  ${key}:`, value);
+			}
+
+			const response = await api.post(`/trainings/user`, formData, {
+				headers: {
+					"Content-Type": "multipart/form-data"
+				}
+			});
+			console.log("Response:", response.data);
+			return response.data;
+		},
+		onError: (error: any) => {
+			console.error("Create error:", error);
+			onError?.(error);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["trainings", userId]
+			});
+			setFormValues(initialFormValues);
+			setErrors({});
+			setIsExpanded(false);
+			onSuccess?.();
+		}
+	});
+
+	const validateForm = (): boolean => {
+		const newErrors: Partial<Record<keyof CreateFormValues, string>> = {};
+
+		if (!formValues.title.trim()) {
+			newErrors.title = "Title is required";
+		}
+		if (!formValues.institution.trim()) {
+			newErrors.institution = "Institution is required";
+		}
+
+		setErrors(newErrors);
+		return Object.keys(newErrors).length === 0;
+	};
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		console.log("=== FORM SUBMIT ===");
+		console.log("Current form values:", formValues);
+
+		if (!validateForm()) {
+			return;
+		}
+
+		await createMutation.mutateAsync(formValues);
+	};
+
+	const handleFieldChange = <K extends keyof CreateFormValues>(
+		field: K,
+		value: CreateFormValues[K]
+	) => {
+		console.log(`Field ${field} changed to:`, value);
+		setFormValues((prev) => ({ ...prev, [field]: value }));
+		// Clear error for this field when user starts typing
+		if (errors[field]) {
+			setErrors((prev) => ({ ...prev, [field]: undefined }));
+		}
+	};
+
+	return (
+		<div className="border-2 border-dashed border-blue-300 rounded-lg overflow-hidden bg-blue-50/30">
+			{/* Header */}
+			<div
+				className="bg-blue-50 px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-blue-100"
+				onClick={() => setIsExpanded(!isExpanded)}
+			>
+				<div className="flex-1">
+					<h4 className="font-semibold text-lg text-blue-900 flex items-center gap-2">
+						<svg
+							className="w-5 h-5"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M12 4v16m8-8H4"
+							/>
+						</svg>
+						Add New Training
+					</h4>
+					<p className="text-sm text-blue-700 mt-1">
+						Click to add a new training experience
+					</p>
+				</div>
+				<button
+					type="button"
+					className="text-blue-600 hover:text-blue-800"
+					onClick={(e) => {
+						e.stopPropagation();
+						setIsExpanded(!isExpanded);
+					}}
+				>
+					<svg
+						className={`w-6 h-6 transition-transform ${
+							isExpanded ? "rotate-180" : ""
+						}`}
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth={2}
+							d="M19 9l-7 7-7-7"
+						/>
+					</svg>
+				</button>
+			</div>
+
+			{/* Expandable Form */}
+			{isExpanded && (
+				<form onSubmit={handleSubmit} className="p-6 space-y-4 bg-white">
+					{/* Title and Institution */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<FormField
+							label="Training Title"
+							htmlFor="title_new"
+							required
+							error={errors.title}
+						>
+							<input
+								id="title_new"
+								type="text"
+								value={formValues.title}
+								onChange={(e) => handleFieldChange("title", e.target.value)}
+								disabled={!FIELD_PERMISSIONS.title}
+								placeholder="e.g., Full Stack Web Development"
+								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+							/>
+						</FormField>
+
+						<FormField
+							label="Institution"
+							htmlFor="institution_new"
+							required
+							error={errors.institution}
+						>
+							<input
+								id="institution_new"
+								type="text"
+								value={formValues.institution}
+								onChange={(e) =>
+									handleFieldChange("institution", e.target.value)
+								}
+								disabled={!FIELD_PERMISSIONS.institution}
+								placeholder="e.g., Coursera, Udemy"
+								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+							/>
+						</FormField>
+					</div>
+
+					{/* Training Type */}
+					<FormField label="Training Type" htmlFor="training_type_new">
+						<input
+							id="training_type_new"
+							type="text"
+							value={formValues.training_type ?? ""}
+							onChange={(e) =>
+								handleFieldChange("training_type", e.target.value || null)
+							}
+							disabled={!FIELD_PERMISSIONS.training_type}
+							placeholder="e.g., Online Course, Workshop, Bootcamp"
+							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+						/>
+					</FormField>
+
+					{/* Start Date and End Date */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<FormField label="Start Date" htmlFor="start_date_new">
+							<input
+								id="start_date_new"
+								type="date"
+								value={formValues.start_date ?? ""}
+								onChange={(e) =>
+									handleFieldChange("start_date", e.target.value || null)
+								}
+								disabled={!FIELD_PERMISSIONS.start_date}
+								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+							/>
+						</FormField>
+
+						<FormField label="End Date" htmlFor="end_date_new">
+							<input
+								id="end_date_new"
+								type="date"
+								value={formValues.end_date ?? ""}
+								onChange={(e) =>
+									handleFieldChange("end_date", e.target.value || null)
+								}
+								disabled={!FIELD_PERMISSIONS.end_date}
+								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+							/>
+						</FormField>
+					</div>
+
+					{/* Skills */}
+					<FormField label="Skills Learned">
+						<SkillsInput
+							value={formValues.skills}
+							onChange={(skills) => handleFieldChange("skills", skills)}
+							disabled={!FIELD_PERMISSIONS.skills}
+						/>
+					</FormField>
+
+					{/* Description */}
+					<FormField label="Description" htmlFor="description_new">
+						<textarea
+							id="description_new"
+							value={formValues.description ?? ""}
+							onChange={(e) =>
+								handleFieldChange("description", e.target.value || null)
+							}
+							disabled={!FIELD_PERMISSIONS.description}
+							placeholder="Describe the training content and what you learned"
+							rows={4}
+							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+						/>
+					</FormField>
+
+					{/* Proof Document */}
+					<div className="pt-4 border-t border-gray-200">
+						<h5 className="font-medium text-gray-900 mb-4">
+							Proof Document (Optional)
+						</h5>
+
+						<FormField
+							label="Upload Training Certificate/Proof"
+							htmlFor="proof_document_new"
+						>
+							<input
+								id="proof_document_new"
+								type="file"
+								onChange={(e) => {
+									const file = e.target.files?.[0];
+									if (file) {
+										handleFieldChange("proof_document", file);
+									}
+								}}
+								disabled={!FIELD_PERMISSIONS.proof_document}
+								accept=".pdf,.jpg,.jpeg,.png"
+								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+							/>
+							<p className="text-xs text-gray-500 mt-1">
+								Max file size: 10MB. Formats: PDF, JPG, PNG
+							</p>
+							{formValues.proof_document && (
+								<p className="text-sm text-gray-600 mt-1">
+									Selected: {formValues.proof_document.name}
+								</p>
+							)}
+						</FormField>
+					</div>
+
+					{/* Action Buttons */}
+					<div className="flex gap-4 pt-4 border-t border-gray-200">
+						<button
+							type="submit"
+							disabled={createMutation.isPending}
+							className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+						>
+							{createMutation.isPending && (
+								<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+							)}
+							Add Training
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setFormValues(initialFormValues);
+								setErrors({});
+								setIsExpanded(false);
+							}}
+							disabled={createMutation.isPending}
+							className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
+						>
+							Cancel
+						</button>
+					</div>
+				</form>
+			)}
+		</div>
+	);
+}
+
+// ==================== SINGLE TRAINING RECORD FORM ====================
+interface TrainingRecordFormProps {
+	record: TrainingItem;
+	onSuccess?: () => void;
+	onError?: (error: any) => void;
+}
+
+function TrainingRecordForm({
+	record,
+	onSuccess,
+	onError
+}: TrainingRecordFormProps) {
+	const queryClient = useQueryClient();
+	const [isExpanded, setIsExpanded] = useState(false);
+
+	// Update mutation - using FormData
+	const updateMutation = useMutation({
+		mutationFn: async (values: UpdateFormValues) => {
+			console.log("=== SUBMITTING TO API ===");
+			console.log("Values:", values);
+
+			// Create FormData
+			const formData = new FormData();
+
+			if (values.title !== null) formData.append("title", values.title);
+			if (values.institution !== null)
+				formData.append("institution", values.institution);
+			if (values.training_type !== null)
+				formData.append("training_type", values.training_type);
+			if (values.start_date !== null)
+				formData.append("start_date", values.start_date);
+			if (values.end_date !== null)
+				formData.append("end_date", values.end_date);
+			if (values.description !== null)
+				formData.append("description", values.description);
+
+			// Handle skills array
+			if (values.skills.length > 0) {
+				formData.append("skills", values.skills.join(","));
+			}
+
+			// Handle file separately
+			if (values.proof_document) {
+				formData.append("proof_document", values.proof_document);
+			}
+
+			// Log FormData contents
+			console.log("FormData contents:");
+			for (const [key, value] of formData.entries()) {
+				console.log(`  ${key}:`, value);
+			}
+
+			const response = await api.patch(`/trainings/${record.id}`, formData, {
+				headers: {
+					"Content-Type": "multipart/form-data"
+				}
+			});
+			console.log("Response:", response.data);
+			return response.data;
+		},
+		onError: (error: any) => {
+			console.error("Update error:", error);
+			onError?.(error);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["trainings", record.user_id]
+			});
+			setIsExpanded(false);
+			onSuccess?.();
+		}
+	});
+
+	// Form state
+	const [formValues, setFormValues] = useState<UpdateFormValues>({
+		description: record.description,
+		end_date: record.end_date,
+		institution: record.institution,
+		proof_document: null,
+		skills: record.skills || [],
+		start_date: record.start_date,
+		title: record.title,
+		training_type: record.training_type
+	});
+
+	// Sync form values with record when it changes
+	useEffect(() => {
+		setFormValues({
+			description: record.description,
+			end_date: record.end_date,
+			institution: record.institution,
+			proof_document: null,
+			skills: record.skills || [],
+			start_date: record.start_date,
+			title: record.title,
+			training_type: record.training_type
+		});
+	}, [record]);
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		console.log("=== FORM SUBMIT ===");
+		console.log("Current form values:", formValues);
+		await updateMutation.mutateAsync(formValues);
+	};
+
+	const handleFieldChange = <K extends keyof UpdateFormValues>(
+		field: K,
+		value: UpdateFormValues[K]
+	) => {
+		console.log(`Field ${field} changed to:`, value);
+		setFormValues((prev) => ({ ...prev, [field]: value }));
+	};
+
+	// Calculate duration
+	const getDuration = () => {
+		if (!record.start_date || !record.end_date) return "Duration not set";
+		const start = new Date(record.start_date);
+		const end = new Date(record.end_date);
+		const diffMonths = Math.round(
+			(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30)
+		);
+		return diffMonths > 0
+			? `${diffMonths} month${diffMonths > 1 ? "s" : ""}`
+			: "Less than a month";
+	};
+
+	return (
+		<div className="border border-gray-200 rounded-lg overflow-hidden">
+			{/* Header */}
+			<div
+				className="bg-gray-50 px-6 py-4 cursor-pointer hover:bg-gray-100"
+				onClick={() => setIsExpanded(!isExpanded)}
+			>
+				<div className="flex items-center justify-between mb-2">
+					<div className="flex-1">
+						<h4 className="font-semibold text-lg text-gray-900">
+							{record.title}
+						</h4>
+						<p className="text-sm text-gray-600 mt-1">
+							{record.institution} • {getDuration()}
+						</p>
+					</div>
+					<button
+						type="button"
+						className="text-gray-500 hover:text-gray-700"
+						onClick={(e) => {
+							e.stopPropagation();
+							setIsExpanded(!isExpanded);
+						}}
+					>
+						<svg
+							className={`w-6 h-6 transition-transform ${
+								isExpanded ? "rotate-180" : ""
+							}`}
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M19 9l-7 7-7-7"
+							/>
+						</svg>
+					</button>
+				</div>
+
+				{/* Display skills in header */}
+				{record.skills && record.skills.length > 0 && (
+					<div className="flex flex-wrap gap-2 mt-2">
+						{record.skills.map((skill, idx) => (
+							<span
+								key={idx}
+								className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+							>
+								{skill}
+							</span>
+						))}
+					</div>
+				)}
+			</div>
+
+			{/* Expandable Form */}
+			{isExpanded && (
+				<form onSubmit={handleSubmit} className="p-6 space-y-4 bg-white">
+					{/* Read-only fields */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-gray-200">
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								ID
+							</label>
+							<input
+								type="text"
+								value={record.id}
+								disabled
+								className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+							/>
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								USN
+							</label>
+							<input
+								type="text"
+								value={record.usn}
+								disabled
+								className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+							/>
+						</div>
+					</div>
+
+					{/* Title and Institution */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<FormField label="Training Title" htmlFor={`title_${record.id}`}>
+							<input
+								id={`title_${record.id}`}
+								type="text"
+								value={formValues.title ?? ""}
+								onChange={(e) =>
+									handleFieldChange("title", e.target.value || null)
+								}
+								disabled={!FIELD_PERMISSIONS.title}
+								placeholder="e.g., Full Stack Web Development"
+								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+							/>
+						</FormField>
+
+						<FormField label="Institution" htmlFor={`institution_${record.id}`}>
+							<input
+								id={`institution_${record.id}`}
+								type="text"
+								value={formValues.institution ?? ""}
+								onChange={(e) =>
+									handleFieldChange("institution", e.target.value || null)
+								}
+								disabled={!FIELD_PERMISSIONS.institution}
+								placeholder="e.g., Coursera, Udemy"
+								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+							/>
+						</FormField>
+					</div>
+
+					{/* Training Type */}
+					<FormField
+						label="Training Type"
+						htmlFor={`training_type_${record.id}`}
+					>
+						<input
+							id={`training_type_${record.id}`}
+							type="text"
+							value={formValues.training_type ?? ""}
+							onChange={(e) =>
+								handleFieldChange("training_type", e.target.value || null)
+							}
+							disabled={!FIELD_PERMISSIONS.training_type}
+							placeholder="e.g., Online Course, Workshop, Bootcamp"
+							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+						/>
+					</FormField>
+
+					{/* Start Date and End Date */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<FormField label="Start Date" htmlFor={`start_date_${record.id}`}>
+							<input
+								id={`start_date_${record.id}`}
+								type="date"
+								value={formValues.start_date ?? ""}
+								onChange={(e) =>
+									handleFieldChange("start_date", e.target.value || null)
+								}
+								disabled={!FIELD_PERMISSIONS.start_date}
+								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+							/>
+						</FormField>
+
+						<FormField label="End Date" htmlFor={`end_date_${record.id}`}>
+							<input
+								id={`end_date_${record.id}`}
+								type="date"
+								value={formValues.end_date ?? ""}
+								onChange={(e) =>
+									handleFieldChange("end_date", e.target.value || null)
+								}
+								disabled={!FIELD_PERMISSIONS.end_date}
+								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+							/>
+						</FormField>
+					</div>
+
+					{/* Skills */}
+					<FormField label="Skills Learned">
+						<SkillsInput
+							value={formValues.skills}
+							onChange={(skills) => handleFieldChange("skills", skills)}
+							disabled={!FIELD_PERMISSIONS.skills}
+						/>
+					</FormField>
+
+					{/* Description */}
+					<FormField label="Description" htmlFor={`description_${record.id}`}>
+						<textarea
+							id={`description_${record.id}`}
+							value={formValues.description ?? ""}
+							onChange={(e) =>
+								handleFieldChange("description", e.target.value || null)
+							}
+							disabled={!FIELD_PERMISSIONS.description}
+							placeholder="Describe the training content and what you learned"
+							rows={4}
+							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+						/>
+					</FormField>
+
+					{/* Proof Document */}
+					<div className="pt-4 border-t border-gray-200">
+						<h5 className="font-medium text-gray-900 mb-4">Proof Document</h5>
+
+						{record.proof_document_signed_url && (
+							<div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+								<p className="text-sm text-blue-800 mb-2">
+									Current training certificate uploaded
+								</p>
+								<a
+									href={record.proof_document_signed_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-sm text-blue-600 hover:text-blue-800 underline"
+								>
+									View Document
+								</a>
+							</div>
+						)}
+
+						<FormField
+							label="Upload New Certificate/Proof"
+							htmlFor={`proof_document_${record.id}`}
+						>
+							<input
+								id={`proof_document_${record.id}`}
+								type="file"
+								onChange={(e) => {
+									const file = e.target.files?.[0];
+									if (file) {
+										handleFieldChange("proof_document", file);
+									}
+								}}
+								disabled={!FIELD_PERMISSIONS.proof_document}
+								accept=".pdf,.jpg,.jpeg,.png"
+								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+							/>
+							{formValues.proof_document && (
+								<p className="text-sm text-gray-600 mt-1">
+									Selected: {formValues.proof_document.name}
+								</p>
+							)}
+						</FormField>
+					</div>
+
+					{/* Action Buttons */}
+					<div className="flex gap-4 pt-4 border-t border-gray-200">
+						<button
+							type="submit"
+							disabled={updateMutation.isPending}
+							className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+						>
+							{updateMutation.isPending && (
+								<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+							)}
+							Save Changes
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setFormValues({
+									description: record.description,
+									end_date: record.end_date,
+									institution: record.institution,
+									proof_document: null,
+									skills: record.skills || [],
+									start_date: record.start_date,
+									title: record.title,
+									training_type: record.training_type
+								});
+								setIsExpanded(false);
+							}}
+							disabled={updateMutation.isPending}
+							className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
+						>
+							Cancel
+						</button>
+					</div>
+				</form>
+			)}
+		</div>
+	);
+}
+
+// ==================== MAIN COMPONENT ====================
+interface TrainingsFormProps {
+	userId: number;
+	onSuccess?: () => void;
+	onError?: (error: any) => void;
+}
+
+export default function TrainingsForm({
+	userId,
+	onSuccess,
+	onError
+}: TrainingsFormProps) {
+	// Fetch trainings
+	const { data, isLoading, isError, error } = useQuery({
+		enabled: !!userId,
+		queryFn: async () => {
+			const response = await api.get<GetTrainingsResponse>(
+				`/trainings/user/${userId}`
+			);
+			return response.data;
+		},
+		queryKey: ["trainings", userId]
+	});
+
+	if (isLoading) {
+		return (
+			<div className="flex items-center justify-center p-8">
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+			</div>
+		);
+	}
+
+	if (isError) {
+		return (
+			<div className="p-4 bg-red-50 text-red-600 rounded-lg">
+				Error loading trainings: {(error as Error)?.message}
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-4 max-w-4xl">
+			<h2 className="text-2xl font-bold text-gray-900 mb-6">Trainings</h2>
+
+			{/* Add New Training Form */}
+			<AddTrainingForm
+				userId={userId}
+				onSuccess={onSuccess}
+				onError={onError}
+			/>
+
+			{/* Existing Training Records */}
+			{data && data.length > 0 ? (
+				data.map((record) => (
+					<TrainingRecordForm
+						key={record.id}
+						record={record}
+						onSuccess={onSuccess}
+						onError={onError}
+					/>
+				))
+			) : (
+				<div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
+					No trainings found. Add your first training above.
+				</div>
+			)}
+		</div>
+	);
+}
