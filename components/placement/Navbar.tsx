@@ -50,7 +50,7 @@ export default function Navbar({ onLogout }: { onLogout: () => void }) {
               { title: "Placement Drives", href: "/placement/drives", description: "Ongoing and past drives.", icon: "Company" },
               { title: "Job Offers", href: "/placement/job-offers", description: "Manage offers and acceptances.", icon: "Job" },
               { title: "Companies", href: "/placement/companies", description: "Recruiter database.", icon: "Company" },
-              { title: "Student Projects", href: "/placement/student-project", description: "Track academic projects.", icon: "Project" },
+              { title: "Student Projects", href: "/placement/student-projects", description: "Track academic projects.", icon: "Project" },
             ]}
           />
 

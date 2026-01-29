@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "../public/output.css";
+import { Toaster } from "@/components/ui/sonner";
 import { Cantarell } from "next/font/google";
 
 const cantarell = Cantarell({
@@ -98,6 +99,7 @@ export default function RootLayout({
             © 2026 Placement Cell RVU. All rights reserved.
           </div>
         </footer>
+        <Toaster />
       </body>
     </html>
   );
