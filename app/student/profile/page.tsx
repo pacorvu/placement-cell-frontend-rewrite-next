@@ -112,10 +112,10 @@ const sidebarItems = [
 ];
 
 export default function StudentProfile() {
+  const userId: number = parseInt(localStorage.getItem("user_id") ?? "0");
   const router = useRouter();
   const [activeSection, setActiveSection] = useState("personal");
   const [isEditing, setIsEditing] = useState(false);
-
   return (
     <div className="min-h-screen bg-base-100">
       {/* Main Content */}
@@ -184,7 +184,7 @@ export default function StudentProfile() {
           {/* Content based on active section */}
           {activeSection === "personal" && (
             <PersonalDetailsForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -192,7 +192,7 @@ export default function StudentProfile() {
 
           {activeSection === "contact" && (
             <ProfileCommunicationForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -200,7 +200,7 @@ export default function StudentProfile() {
 
           {activeSection === "parent" && (
             <ParentDetailsForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -208,7 +208,7 @@ export default function StudentProfile() {
 
           {activeSection === "career" && (
             <ProfileDetailsForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -217,7 +217,7 @@ export default function StudentProfile() {
 
           {activeSection === "education" && (
             <EducationalHistoryForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -225,7 +225,7 @@ export default function StudentProfile() {
 
           {activeSection === "academic" && (
             <SemesterAcademicsForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -233,7 +233,7 @@ export default function StudentProfile() {
 
           {activeSection === "projects" && (
             <ProjectsForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -241,7 +241,7 @@ export default function StudentProfile() {
 
           {activeSection === "internships" && (
             <InternshipForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -249,7 +249,7 @@ export default function StudentProfile() {
 
           {activeSection === "training" && (
             <TrainingsForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -257,7 +257,7 @@ export default function StudentProfile() {
 
           {activeSection === "certifications" && (
             <CertificationsForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -265,7 +265,7 @@ export default function StudentProfile() {
 
           {activeSection === "publications" && (
             <PublicationsForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -273,7 +273,7 @@ export default function StudentProfile() {
 
           {activeSection === "extracurricular" && (
             <ExtracurricularForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
@@ -281,7 +281,7 @@ export default function StudentProfile() {
 
           {activeSection === "experiences" && (
             <OtherExperiencesForm
-              userId={10}
+              userId={userId}
               onSuccess={() => toast.success("Updated successfully")}
               onError={(err) => toast.error(err.message)}
             />
