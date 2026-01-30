@@ -1,22 +1,21 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import PersonalInformationForm from "./components/PersonalInformationForm";
-import ContactInformationForm from "./components/ContactInformationForm";
-import ParentGuardianDetailsForm from "./components/ParentGuardianDetailsForm";
-import CareerOverviewForm from "./components/CareerOverviewForm";
-import EducationHistoryForm from "./components/EducationHistoryForm";
-import ResumeForm from "./components/ResumeForm";
-import AcademicPerformanceForm from "./components/AcademicPerformanceForm";
-import ProjectsForm from "./components/ProjectsForm";
-import InternshipsForm from "./components/InternshipsForm";
-import TrainingWorkshopsForm from "./components/TrainingWorkshopsForm";
-import CertificationsForm from "./components/CertificationsForm";
-import PublicationsForm from "./components/PublicationsForm";
-import ExtraCurricularForm from "./components/ExtraCurricularForm";
-import OtherExperiencesForm from "./components/OtherExperiencesForm";
+import ProjectsForm from "@/components/student/project.form";
+import CertificationsForm from "@/components/student/career";
+import PublicationsForm from "@/components/student/publications";
+import OtherExperiencesForm from "@/components/student/other";
+import SemesterAcademicsForm from "@/components/student/academics";
+import { toast } from "sonner";
+import ProfileDetailsForm from "@/components/student/details";
+import ProfileCommunicationForm from "@/components/student/contact";
+import ParentDetailsForm from "@/components/student/parents";
+import PersonalDetailsForm from "@/components/student/personal-information.form";
+import EducationalHistoryForm from "@/components/student/educational-history.form";
+import InternshipForm from "@/components/student/internship.form";
+import TrainingsForm from "@/components/student/trainings";
+import ExtracurricularForm from "@/components/student/extra-ciricular";
 
 const sidebarItems = [
   {
@@ -104,12 +103,12 @@ const sidebarItems = [
     addable: true,
     icon: <i className="material-icons h-5 w-5">work_outline</i>
   },
-  {
-    id: "resume",
-    label: "Resume",
-    hasData: false,
-    icon: <i className="material-icons h-5 w-5">description</i>
-  },
+  // {
+  //   id: "resume",
+  //   label: "Resume",
+  //   hasData: false,
+  //   icon: <i className="material-icons h-5 w-5">description</i>
+  // },
 ];
 
 export default function StudentProfile() {
@@ -184,60 +183,113 @@ export default function StudentProfile() {
 
           {/* Content based on active section */}
           {activeSection === "personal" && (
-            <PersonalInformationForm isEditing={isEditing} />
+            <PersonalDetailsForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "contact" && (
-            <ContactInformationForm isEditing={isEditing} />
+            <ProfileCommunicationForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "parent" && (
-            <ParentGuardianDetailsForm isEditing={isEditing} />
+            <ParentDetailsForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "career" && (
-            <CareerOverviewForm isEditing={isEditing} />
+            <ProfileDetailsForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
+
           )}
 
           {activeSection === "education" && (
-            <EducationHistoryForm isEditing={isEditing} />
+            <EducationalHistoryForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "academic" && (
-            <AcademicPerformanceForm isEditing={isEditing} />
+            <SemesterAcademicsForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "projects" && (
-            <ProjectsForm isEditing={isEditing} />
+            <ProjectsForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "internships" && (
-            <InternshipsForm isEditing={isEditing} />
+            <InternshipForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "training" && (
-            <TrainingWorkshopsForm isEditing={isEditing} />
+            <TrainingsForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "certifications" && (
-            <CertificationsForm isEditing={isEditing} />
+            <CertificationsForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "publications" && (
-            <PublicationsForm isEditing={isEditing} />
+            <PublicationsForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "extracurricular" && (
-            <ExtraCurricularForm isEditing={isEditing} />
+            <ExtracurricularForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
           {activeSection === "experiences" && (
-            <OtherExperiencesForm isEditing={isEditing} />
+            <OtherExperiencesForm
+              userId={10}
+              onSuccess={() => toast.success("Updated successfully")}
+              onError={(err) => toast.error(err.message)}
+            />
           )}
 
-          {activeSection === "resume" && (
-            <ResumeForm isEditing={isEditing} />
-          )}
+          {/* {activeSection === "resume" && ( */}
+          {/*   <ResumeForm isEditing={isEditing} /> */}
+          {/* )} */}
 
 
 
