@@ -240,9 +240,9 @@ export const authService = {
     setTokens(access_token, refresh_token, user_id, role_type);
 
     // Fetch and cache user data
-    if (role_type === "Student") {
-      await userService.fetchAndCacheUserData();
-    }
+    // if (role_type === "Student") {
+    //   await userService.fetchAndCacheUserData();
+    // }
 
     return response.data;
   },

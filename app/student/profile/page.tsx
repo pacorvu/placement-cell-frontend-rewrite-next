@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import ProjectsForm from "@/components/student/project.form";
 import CertificationsForm from "@/components/student/career";
 import PublicationsForm from "@/components/student/publications";
@@ -113,7 +112,6 @@ const sidebarItems = [
 
 export default function StudentProfile() {
   const userId: number = parseInt(localStorage.getItem("user_id") ?? "0");
-  const router = useRouter();
   const [activeSection, setActiveSection] = useState("personal");
   const [isEditing, setIsEditing] = useState(false);
   return (
