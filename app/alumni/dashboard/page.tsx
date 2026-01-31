@@ -279,7 +279,7 @@ export default function AlumniPage() {
             {featuredAlumni.map((alumni) => (
               <Link
                 key={alumni.id}
-                href={`/alumni/${alumni.usn}`}
+                href={`/alumni/${alumni.id}`}
                 className="card bg-base-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 <div className="card-body">
@@ -297,7 +297,7 @@ export default function AlumniPage() {
                     <div>
                       <h3 className="font-bold text-lg">{alumni.name}</h3>
                       <p className="text-sm text-base-content/60">
-                        {alumni.usn}
+                        {alumni.id}
                       </p>
                     </div>
                   </div>

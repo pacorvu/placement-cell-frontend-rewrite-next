@@ -408,9 +408,9 @@ export default function AlumniPage() {
             <TableBody>
               {alumni.map((alum, index) => (
                 <TableRow
-                  key={alum.usn}
+                  key={alum.id}
                   className="cursor-pointer hover:bg-base-200/50"
-                  onClick={() => handleAlumniClick(alum.usn)}
+                  onClick={() => handleAlumniClick(alum.id)}
                 >
                   {visibleColumns.has("index") && (
                     <TableCell className="text-base-content/60">
@@ -440,7 +440,7 @@ export default function AlumniPage() {
                   {visibleColumns.has("usn") && (
                     <TableCell>
                       <span className="badge badge-secondary badge-sm font-mono">
-                        {alum.usn}
+                        {alum.id}
                       </span>
                     </TableCell>
                   )}
