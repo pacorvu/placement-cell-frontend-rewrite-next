@@ -51,10 +51,12 @@ export default function ContactInformationForm({
     if (profileComm) {
       setPersonalEmail(profileComm.personal_email || "");
 
-      if (profileComm.links && typeof profileComm.links === 'object') {
+      if (profileComm.links && typeof profileComm.links === "object") {
         setLinks({
-          linkedin: (profileComm.links as Record<string, string>).linkedin || "",
-          portfolio: (profileComm.links as Record<string, string>).portfolio || "",
+          linkedin:
+            (profileComm.links as Record<string, string>).linkedin || "",
+          portfolio:
+            (profileComm.links as Record<string, string>).portfolio || "",
           github: (profileComm.links as Record<string, string>).github || "",
           other: (profileComm.links as Record<string, string>).other || "",
         });
@@ -107,7 +109,7 @@ export default function ContactInformationForm({
       // Make PATCH request using axios
       const response = await api.patch(
         `/profile-communication/user/${user.user_id}`,
-        validatedData
+        validatedData,
       );
 
       toast.success("Contact information updated successfully");
@@ -116,12 +118,11 @@ export default function ContactInformationForm({
       if (onSaveComplete) {
         onSaveComplete();
       }
-
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Handle validation errors
         const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           const path = err.path.join(".");
           fieldErrors[path] = err.message;
         });
@@ -129,7 +130,10 @@ export default function ContactInformationForm({
         toast.error("Please fix the validation errors");
       } else if (error instanceof AxiosError) {
         // Handle axios errors
-        const errorMessage = error.response?.data?.message || error.message || "Failed to update contact information";
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to update contact information";
         toast.error(errorMessage);
       } else if (error instanceof Error) {
         toast.error(error.message);
@@ -191,11 +195,14 @@ export default function ContactInformationForm({
                 }
               }}
               disabled={!isEditing}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${errors.personal_email ? "border-red-500" : "border-gray-300"
-                }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${
+                errors.personal_email ? "border-red-500" : "border-gray-300"
+              }`}
             />
             {errors.personal_email && (
-              <p className="text-xs text-red-500 mt-1">{errors.personal_email}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {errors.personal_email}
+              </p>
             )}
           </div>
 
@@ -246,23 +253,28 @@ export default function ContactInformationForm({
               value={links.linkedin}
               onChange={(e) => updateLink("linkedin", e.target.value)}
               disabled={!isEditing}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${errors["links.linkedin"] ? "border-red-500" : "border-gray-300"
-                }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${
+                errors["links.linkedin"] ? "border-red-500" : "border-gray-300"
+              }`}
             />
             {errors["links.linkedin"] && (
-              <p className="text-xs text-red-500 mt-1">{errors["links.linkedin"]}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {errors["links.linkedin"]}
+              </p>
             )}
-            {links.linkedin && isValidUrl(links.linkedin) && !errors["links.linkedin"] && (
-              <a
-                href={links.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                <i className="material-icons text-sm">open_in_new</i>
-                View LinkedIn Profile
-              </a>
-            )}
+            {links.linkedin &&
+              isValidUrl(links.linkedin) &&
+              !errors["links.linkedin"] && (
+                <a
+                  href={links.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <i className="material-icons text-sm">open_in_new</i>
+                  View LinkedIn Profile
+                </a>
+              )}
           </div>
 
           <div>
@@ -275,23 +287,28 @@ export default function ContactInformationForm({
               value={links.portfolio}
               onChange={(e) => updateLink("portfolio", e.target.value)}
               disabled={!isEditing}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${errors["links.portfolio"] ? "border-red-500" : "border-gray-300"
-                }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${
+                errors["links.portfolio"] ? "border-red-500" : "border-gray-300"
+              }`}
             />
             {errors["links.portfolio"] && (
-              <p className="text-xs text-red-500 mt-1">{errors["links.portfolio"]}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {errors["links.portfolio"]}
+              </p>
             )}
-            {links.portfolio && isValidUrl(links.portfolio) && !errors["links.portfolio"] && (
-              <a
-                href={links.portfolio}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                <i className="material-icons text-sm">open_in_new</i>
-                Visit Portfolio
-              </a>
-            )}
+            {links.portfolio &&
+              isValidUrl(links.portfolio) &&
+              !errors["links.portfolio"] && (
+                <a
+                  href={links.portfolio}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <i className="material-icons text-sm">open_in_new</i>
+                  Visit Portfolio
+                </a>
+              )}
           </div>
 
           <div>
@@ -304,52 +321,60 @@ export default function ContactInformationForm({
               value={links.github}
               onChange={(e) => updateLink("github", e.target.value)}
               disabled={!isEditing}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${errors["links.github"] ? "border-red-500" : "border-gray-300"
-                }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${
+                errors["links.github"] ? "border-red-500" : "border-gray-300"
+              }`}
             />
             {errors["links.github"] && (
-              <p className="text-xs text-red-500 mt-1">{errors["links.github"]}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {errors["links.github"]}
+              </p>
             )}
-            {links.github && isValidUrl(links.github) && !errors["links.github"] && (
-              <a
-                href={links.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                <i className="material-icons text-sm">open_in_new</i>
-                View GitHub Profile
-              </a>
-            )}
+            {links.github &&
+              isValidUrl(links.github) &&
+              !errors["links.github"] && (
+                <a
+                  href={links.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <i className="material-icons text-sm">open_in_new</i>
+                  View GitHub Profile
+                </a>
+              )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Other Link
-            </label>
+            <label className="block text-sm font-medium mb-2">Other Link</label>
             <input
               type="url"
               placeholder="https://other-link.com"
               value={links.other}
               onChange={(e) => updateLink("other", e.target.value)}
               disabled={!isEditing}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${errors["links.other"] ? "border-red-500" : "border-gray-300"
-                }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed ${
+                errors["links.other"] ? "border-red-500" : "border-gray-300"
+              }`}
             />
             {errors["links.other"] && (
-              <p className="text-xs text-red-500 mt-1">{errors["links.other"]}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {errors["links.other"]}
+              </p>
             )}
-            {links.other && isValidUrl(links.other) && !errors["links.other"] && (
-              <a
-                href={links.other}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                <i className="material-icons text-sm">open_in_new</i>
-                View Link
-              </a>
-            )}
+            {links.other &&
+              isValidUrl(links.other) &&
+              !errors["links.other"] && (
+                <a
+                  href={links.other}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <i className="material-icons text-sm">open_in_new</i>
+                  View Link
+                </a>
+              )}
           </div>
         </div>
       </div>
