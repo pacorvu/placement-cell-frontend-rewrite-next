@@ -1,11 +1,11 @@
 interface StudentPageProps {
-  params: {
+  params: Promise<{
     usn: string;
-  };
+  }>;
 }
 
-export default function StudentPage({ params }: StudentPageProps) {
-  const { usn } = params;
+export default async function StudentPage({ params }: StudentPageProps) {
+  const { usn } = await params;
 
   return (
     <div>

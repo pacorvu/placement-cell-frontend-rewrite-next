@@ -1,3 +1,9 @@
-export default function RegistrationPage({ params }: { params: { id: string } }) {
-  return <div>Drive Registration Page where id is {params.id}</div>;
+export default async function RegistrationPage({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}) {
+  const { id } = await params;
+  
+  return <div>Drive Registration Page where id is {id}</div>;
 }
