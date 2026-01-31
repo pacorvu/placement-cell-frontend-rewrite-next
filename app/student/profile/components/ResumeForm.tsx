@@ -16,7 +16,8 @@ export default function ResumeForm({ isEditing }: ResumeFormProps) {
   useEffect(() => {
     // Assuming resume is stored in user profile or a specific field
     // Adjust this based on your actual data structure
-    const existingResume = user?.resume_url || "";
+    // current set to null
+    const existingResume =  "";
     setResumeUrl(existingResume);
   }, [user]);
 
