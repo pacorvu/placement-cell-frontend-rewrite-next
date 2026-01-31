@@ -1,7 +1,9 @@
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { api } from "@/lib/api";
+import { getFieldError } from "@/lib/form-helper";
 
 // ==================== SCHEMAS ====================
 const parentItemSchema = z.object({
@@ -15,19 +17,18 @@ const parentItemSchema = z.object({
   phone_number: z.string().nullable(),
   updated_at: z.string().datetime(),
   user_id: z.number(),
-  usn: z.string()
+  usn: z.string(),
 });
 
 const getParentDetailsResponseSchema = z.array(parentItemSchema);
 
 const createParentRequestSchema = z.object({
-  email: z.string().email(),
-  name: z.string(),
-  occupation: z.string(),
-  organisation: z.string(),
-  parent_type: z.string(),
-  phone_number: z.string(),
-  student_user_id: z.number()
+  email: z.string().email("Invalid email format"),
+  name: z.string().min(1, "Name is required"),
+  occupation: z.string().min(1, "Occupation is required"),
+  organisation: z.string().min(1, "Organisation is required"),
+  parent_type: z.string().min(1, "Parent type is required"),
+  phone_number: z.string().min(1, "Phone number is required"),
 });
 
 const updateParentRequestSchema = z.object({
@@ -36,33 +37,13 @@ const updateParentRequestSchema = z.object({
   occupation: z.string().nullable().optional(),
   organisation: z.string().nullable().optional(),
   parent_type: z.enum(["Father", "Mother", "Guardian"]).nullable().optional(),
-  phone_number: z.string().nullable().optional()
+  phone_number: z.string().nullable().optional(),
 });
 
 type ParentItem = z.infer<typeof parentItemSchema>;
 type GetParentDetailsResponse = z.infer<typeof getParentDetailsResponseSchema>;
 type CreateParentRequest = z.infer<typeof createParentRequestSchema>;
 type UpdateParentRequest = z.infer<typeof updateParentRequestSchema>;
-
-// Form values type for create
-type CreateFormValues = {
-  parent_type: string;
-  name: string;
-  occupation: string;
-  organisation: string;
-  phone_number: string;
-  email: string;
-};
-
-// Form values type for update
-type UpdateFormValues = {
-  parent_type: string | null;
-  name: string | null;
-  occupation: string | null;
-  organisation: string | null;
-  email: string | null;
-  phone_number: string | null;
-};
 
 // ==================== FIELD PERMISSIONS CONFIG ====================
 const FIELD_PERMISSIONS = {
@@ -71,7 +52,7 @@ const FIELD_PERMISSIONS = {
   occupation: true,
   organisation: true,
   parent_type: true,
-  phone_number: true
+  phone_number: true,
 } as const;
 
 // ==================== HELPER COMPONENTS ====================
@@ -88,19 +69,22 @@ function FormField({
   htmlFor,
   error,
   required,
-  children
+  children,
 }: FormFieldProps) {
   return (
-    <div>
-      <label
-        htmlFor={htmlFor}
-        className="block text-sm font-medium text-gray-700 mb-1"
-      >
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+    <div className="form-control w-full">
+      <label htmlFor={htmlFor} className="label">
+        <span className="label-text font-medium">
+          {label}
+          {required && <span className="text-error ml-1">*</span>}
+        </span>
       </label>
-      {children}
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      <div className="mt-1">{children}</div>
+      {error && (
+        <label className="label pt-1">
+          <span className="label-text-alt text-error">{error}</span>
+        </label>
+      )}
     </div>
   );
 }
@@ -116,33 +100,15 @@ function AddParentForm({ userId, onSuccess, onError }: AddParentFormProps) {
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Initial empty form values
-  const initialFormValues: CreateFormValues = {
-    email: "",
-    name: "",
-    occupation: "",
-    organisation: "",
-    parent_type: "",
-    phone_number: ""
-  };
-
-  const [formValues, setFormValues] =
-    useState<CreateFormValues>(initialFormValues);
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof CreateFormValues, string>>
-  >({});
-
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: async (values: CreateFormValues) => {
+    mutationFn: async (values: CreateParentRequest) => {
       console.log("=== CREATING NEW PARENT/GUARDIAN ===");
       console.log("Values:", values);
-
       const payload = {
         ...values,
-        student_user_id: userId
+        student_user_id: userId,
       };
-
       const response = await api.post(`/parent-details/user`, payload);
       console.log("Response:", response.data);
       return response.data;
@@ -153,76 +119,43 @@ function AddParentForm({ userId, onSuccess, onError }: AddParentFormProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["parent-details", userId]
+        queryKey: ["parent-details", userId],
       });
-      setFormValues(initialFormValues);
-      setErrors({});
+      form.reset();
       setIsExpanded(false);
       onSuccess?.();
-    }
+    },
   });
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof CreateFormValues, string>> = {};
-
-    if (!formValues.parent_type) {
-      newErrors.parent_type = "Parent type is required";
-    }
-    if (!formValues.name.trim()) {
-      newErrors.name = "Name is required";
-    }
-    if (!formValues.occupation.trim()) {
-      newErrors.occupation = "Occupation is required";
-    }
-    if (!formValues.organisation.trim()) {
-      newErrors.organisation = "Organisation is required";
-    }
-    if (!formValues.phone_number.trim()) {
-      newErrors.phone_number = "Phone number is required";
-    }
-    if (!formValues.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValues.email)) {
-      newErrors.email = "Invalid email format";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("=== FORM SUBMIT ===");
-    console.log("Current form values:", formValues);
-
-    if (!validateForm()) {
-      return;
-    }
-
-    await createMutation.mutateAsync(formValues);
-  };
-
-  const handleFieldChange = <K extends keyof CreateFormValues>(
-    field: K,
-    value: CreateFormValues[K]
-  ) => {
-    console.log(`Field ${field} changed to:`, value);
-    setFormValues((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
+  // TanStack Form setup
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      name: "",
+      occupation: "",
+      organisation: "",
+      parent_type: "",
+      phone_number: "",
+    } as CreateParentRequest,
+    onSubmit: async ({ value }) => {
+      console.log("=== FORM SUBMIT ===");
+      console.log("Current form values:", value);
+      await createMutation.mutateAsync(value);
+    },
+    validators: {
+      onSubmit: createParentRequestSchema,
+    },
+  });
 
   return (
-    <div className="border-2 border-dashed border-blue-300 rounded-lg overflow-hidden bg-blue-50/30">
+    <div className="border-2 border-dashed border-primary rounded-lg overflow-hidden bg-primary/5">
       {/* Header */}
       <div
-        className="bg-blue-50 px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-blue-100"
+        className="bg-primary/10 px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-primary/20 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex-1">
-          <h4 className="font-semibold text-lg text-blue-900 flex items-center gap-2">
+          <h4 className="font-semibold text-lg flex items-center gap-2">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -238,13 +171,13 @@ function AddParentForm({ userId, onSuccess, onError }: AddParentFormProps) {
             </svg>
             Add Parent/Guardian Details
           </h4>
-          <p className="text-sm text-blue-700 mt-1">
+          <p className="text-sm opacity-70 mt-1">
             Click to add parent or guardian information
           </p>
         </div>
         <button
           type="button"
-          className="text-blue-600 hover:text-blue-800"
+          className="btn btn-ghost btn-sm btn-circle"
           onClick={(e) => {
             e.stopPropagation();
             setIsExpanded(!isExpanded);
@@ -269,151 +202,217 @@ function AddParentForm({ userId, onSuccess, onError }: AddParentFormProps) {
 
       {/* Expandable Form */}
       {isExpanded && (
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-white">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          className="p-6 space-y-4 bg-base-100"
+        >
           {/* Parent Type */}
-          <FormField
-            label="Parent/Guardian Type"
-            htmlFor="parent_type_new"
-            required
-            error={errors.parent_type}
+          <form.Field
+            name="parent_type"
+            validators={{
+              onBlur: z.string().min(1, "Parent type is required"),
+            }}
           >
-            <select
-              id="parent_type_new"
-              value={formValues.parent_type}
-              onChange={(e) => handleFieldChange("parent_type", e.target.value)}
-              disabled={!FIELD_PERMISSIONS.parent_type}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-            >
-              <option value="">Select type</option>
-              <option value="Father">Father</option>
-              <option value="Mother">Mother</option>
-              <option value="Guardian">Guardian</option>
-            </select>
-          </FormField>
+            {(field) => (
+              <FormField
+                label="Parent/Guardian Type"
+                htmlFor="parent_type_new"
+                required
+                error={getFieldError(field.state.meta.errors)}
+              >
+                <select
+                  id="parent_type_new"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                  disabled={!FIELD_PERMISSIONS.parent_type}
+                  className="select select-bordered w-full"
+                >
+                  <option value="">Select type</option>
+                  <option value="Father">Father</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Guardian">Guardian</option>
+                </select>
+              </FormField>
+            )}
+          </form.Field>
 
           {/* Name */}
-          <FormField
-            label="Full Name"
-            htmlFor="name_new"
-            required
-            error={errors.name}
+          <form.Field
+            name="name"
+            validators={{
+              onBlur: z.string().min(1, "Name is required"),
+            }}
           >
-            <input
-              id="name_new"
-              type="text"
-              value={formValues.name}
-              onChange={(e) => handleFieldChange("name", e.target.value)}
-              disabled={!FIELD_PERMISSIONS.name}
-              placeholder="Enter full name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-            />
-          </FormField>
+            {(field) => (
+              <FormField
+                label="Full Name"
+                htmlFor="name_new"
+                required
+                error={getFieldError(field.state.meta.errors)}
+              >
+                <input
+                  id="name_new"
+                  type="text"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                  disabled={!FIELD_PERMISSIONS.name}
+                  placeholder="Enter full name"
+                  className="input input-bordered w-full"
+                />
+              </FormField>
+            )}
+          </form.Field>
 
           {/* Email and Phone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              label="Email"
-              htmlFor="email_new"
-              required
-              error={errors.email}
+            <form.Field
+              name="email"
+              validators={{
+                onBlur: z.string().email("Invalid email format"),
+              }}
             >
-              <input
-                id="email_new"
-                type="email"
-                value={formValues.email}
-                onChange={(e) => handleFieldChange("email", e.target.value)}
-                disabled={!FIELD_PERMISSIONS.email}
-                placeholder="parent@example.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
-            </FormField>
+              {(field) => (
+                <FormField
+                  label="Email"
+                  htmlFor="email_new"
+                  required
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="email_new"
+                    type="email"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.email}
+                    placeholder="parent@example.com"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
 
-            <FormField
-              label="Phone Number"
-              htmlFor="phone_number_new"
-              required
-              error={errors.phone_number}
+            <form.Field
+              name="phone_number"
+              validators={{
+                onBlur: z.string().min(1, "Phone number is required"),
+              }}
             >
-              <input
-                id="phone_number_new"
-                type="tel"
-                value={formValues.phone_number}
-                onChange={(e) =>
-                  handleFieldChange("phone_number", e.target.value)
-                }
-                disabled={!FIELD_PERMISSIONS.phone_number}
-                placeholder="+91 9876543210"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
-            </FormField>
+              {(field) => (
+                <FormField
+                  label="Phone Number"
+                  htmlFor="phone_number_new"
+                  required
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="phone_number_new"
+                    type="tel"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.phone_number}
+                    placeholder="+91 9876543210"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
           </div>
 
           {/* Occupation and Organisation */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              label="Occupation"
-              htmlFor="occupation_new"
-              required
-              error={errors.occupation}
+            <form.Field
+              name="occupation"
+              validators={{
+                onBlur: z.string().min(1, "Occupation is required"),
+              }}
             >
-              <input
-                id="occupation_new"
-                type="text"
-                value={formValues.occupation}
-                onChange={(e) =>
-                  handleFieldChange("occupation", e.target.value)
-                }
-                disabled={!FIELD_PERMISSIONS.occupation}
-                placeholder="e.g., Software Engineer"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
-            </FormField>
+              {(field) => (
+                <FormField
+                  label="Occupation"
+                  htmlFor="occupation_new"
+                  required
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="occupation_new"
+                    type="text"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.occupation}
+                    placeholder="e.g., Software Engineer"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
 
-            <FormField
-              label="Organisation"
-              htmlFor="organisation_new"
-              required
-              error={errors.organisation}
+            <form.Field
+              name="organisation"
+              validators={{
+                onBlur: z.string().min(1, "Organisation is required"),
+              }}
             >
-              <input
-                id="organisation_new"
-                type="text"
-                value={formValues.organisation}
-                onChange={(e) =>
-                  handleFieldChange("organisation", e.target.value)
-                }
-                disabled={!FIELD_PERMISSIONS.organisation}
-                placeholder="Enter company/organisation name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
-            </FormField>
+              {(field) => (
+                <FormField
+                  label="Organisation"
+                  htmlFor="organisation_new"
+                  required
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="organisation_new"
+                    type="text"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.organisation}
+                    placeholder="Enter company/organisation name"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 pt-4 border-t border-gray-200">
-            <button
-              type="submit"
-              disabled={createMutation.isPending}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {createMutation.isPending && (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-              )}
-              Add Parent/Guardian
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setFormValues(initialFormValues);
-                setErrors({});
-                setIsExpanded(false);
-              }}
-              disabled={createMutation.isPending}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-          </div>
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <div className="flex gap-4 pt-4 border-t border-base-300">
+                <button
+                  type="submit"
+                  disabled={!canSubmit || isSubmitting}
+                  className="btn btn-primary"
+                >
+                  {isSubmitting && (
+                    <span className="loading loading-spinner"></span>
+                  )}
+                  Add Parent/Guardian
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    form.reset();
+                    setIsExpanded(false);
+                  }}
+                  disabled={isSubmitting}
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </form.Subscribe>
         </form>
       )}
     </div>
@@ -426,24 +425,22 @@ interface ParentRecordFormProps {
   onSuccess?: () => void;
   onError?: (error: any) => void;
 }
-
 function ParentRecordForm({
   record,
   onSuccess,
-  onError
+  onError,
 }: ParentRecordFormProps) {
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: async (values: UpdateFormValues) => {
+    mutationFn: async (values: UpdateParentRequest) => {
       console.log("=== SUBMITTING TO API ===");
       console.log("Values:", values);
-
       const response = await api.patch(
         `/parent-details/parent/${record.user_id}`,
-        values
+        values,
       );
       console.log("Response:", response.data);
       return response.data;
@@ -454,48 +451,61 @@ function ParentRecordForm({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["parent-details", record.user_id]
+        queryKey: ["parent-details", record.user_id],
       });
       setIsExpanded(false);
       onSuccess?.();
+    },
+  });
+
+  // Helper function to validate parent type
+  const getValidParentType = (value: string | null): "Father" | "Mother" | "Guardian" | null => {
+    if (value === "Father" || value === "Mother" || value === "Guardian") {
+      return value;
     }
-  });
+    return null;
+  };
 
-  // Form state
-  const [formValues, setFormValues] = useState<UpdateFormValues>({
-    email: record.email,
-    name: record.name,
-    occupation: record.occupation,
-    organisation: record.organisation,
-    parent_type: record.parent_type,
-    phone_number: record.phone_number
-  });
-
-  // Sync form values with record when it changes
-  useEffect(() => {
-    setFormValues({
+  // TanStack Form setup
+  const form = useForm({
+    defaultValues: {
       email: record.email,
       name: record.name,
       occupation: record.occupation,
       organisation: record.organisation,
-      parent_type: record.parent_type,
-      phone_number: record.phone_number
-    });
-  }, [record]);
+      parent_type: getValidParentType(record.parent_type),
+      phone_number: record.phone_number,
+    } as UpdateParentRequest,
+    onSubmit: async ({ value }) => {
+      console.log("=== FORM SUBMIT ===");
+      console.log("Current form values:", value);
+      await updateMutation.mutateAsync(value);
+    },
+    validators: {
+      onSubmit: updateParentRequestSchema,
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("=== FORM SUBMIT ===");
-    console.log("Current form values:", formValues);
-    await updateMutation.mutateAsync(formValues);
-  };
+  // Sync form values with record when it changes
+  useEffect(() => {
+    if (!form.state.isDirty) {
+      form.setFieldValue("email", record.email);
+      form.setFieldValue("name", record.name);
+      form.setFieldValue("occupation", record.occupation);
+      form.setFieldValue("organisation", record.organisation);
+      form.setFieldValue("parent_type", getValidParentType(record.parent_type) as any);
+      form.setFieldValue("phone_number", record.phone_number);
+    }
+  }, [record, form]);
 
-  const handleFieldChange = <K extends keyof UpdateFormValues>(
-    field: K,
-    value: UpdateFormValues[K]
-  ) => {
-    console.log(`Field ${field} changed to:`, value);
-    setFormValues((prev) => ({ ...prev, [field]: value }));
+  const handleReset = () => {
+    form.setFieldValue("email", record.email);
+    form.setFieldValue("name", record.name);
+    form.setFieldValue("occupation", record.occupation);
+    form.setFieldValue("organisation", record.organisation);
+    form.setFieldValue("parent_type", getValidParentType(record.parent_type) as any);
+    form.setFieldValue("phone_number", record.phone_number);
+    setIsExpanded(false);
   };
 
   const parentTypeLabel = record.parent_type || "Not Set";
@@ -516,20 +526,18 @@ function ParentRecordForm({
   );
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="card bg-base-100 border border-base-300 shadow-sm">
       {/* Header */}
       <div
-        className="bg-gray-50 px-6 py-4 cursor-pointer hover:bg-gray-100"
+        className="card-body cursor-pointer hover:bg-base-200 transition-colors p-6"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">
-            <div className="text-gray-500">{parentIcon}</div>
+            <div className="opacity-70">{parentIcon}</div>
             <div>
-              <h4 className="font-semibold text-lg text-gray-900">
-                {parentTypeLabel}
-              </h4>
-              <p className="text-sm text-gray-600 mt-1">
+              <h4 className="font-semibold text-lg">{parentTypeLabel}</h4>
+              <p className="text-sm opacity-70 mt-1">
                 {record.name || "Name not set"} •{" "}
                 {record.phone_number || "Phone not set"}
               </p>
@@ -537,7 +545,7 @@ function ParentRecordForm({
           </div>
           <button
             type="button"
-            className="text-gray-500 hover:text-gray-700"
+            className="btn btn-ghost btn-sm btn-circle"
             onClick={(e) => {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
@@ -563,172 +571,230 @@ function ParentRecordForm({
 
       {/* Expandable Form */}
       {isExpanded && (
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-white">
-          {/* Read-only fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-gray-200">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                ID
-              </label>
-              <input
-                type="text"
-                value={record.id}
-                disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                USN
-              </label>
-              <input
-                type="text"
-                value={record.usn}
-                disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-              />
-            </div>
-          </div>
-
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          className="card-body pt-0 space-y-4"
+        >
           {/* Parent Type */}
-          <FormField label="Parent Type" htmlFor={`parent_type_${record.id}`}>
-            <select
-              id={`parent_type_${record.id}`}
-              value={formValues.parent_type ?? ""}
-              onChange={(e) =>
-                handleFieldChange(
-                  "parent_type",
-                  e.target.value === "" ? null : e.target.value
-                )
-              }
-              disabled={!FIELD_PERMISSIONS.parent_type}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-            >
-              <option value="">Select type</option>
-              <option value="Father">Father</option>
-              <option value="Mother">Mother</option>
-              <option value="Guardian">Guardian</option>
-            </select>
-          </FormField>
+          <form.Field
+            name="parent_type"
+            validators={{
+              onBlur: z
+                .enum(["Father", "Mother", "Guardian"])
+                .nullable()
+                .optional(),
+            }}
+          >
+            {(field) => (
+              <FormField
+                label="Parent Type"
+                htmlFor={`parent_type_${record.id}`}
+                error={getFieldError(field.state.meta.errors)}
+              >
+                <select
+                  id={`parent_type_${record.id}`}
+                  value={field.state.value ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value === "" ? null : e.target.value;
+                    // Type cast to the enum type
+                    field.handleChange(value as "Father" | "Mother" | "Guardian" | null);
+                  }}
+                  onBlur={field.handleBlur}
+                  disabled={!FIELD_PERMISSIONS.parent_type}
+                  className="select select-bordered w-full"
+                >
+                  <option value="">Select type</option>
+                  <option value="Father">Father</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Guardian">Guardian</option>
+                </select>
+              </FormField>
+            )}
+          </form.Field>
 
           {/* Name */}
-          <FormField label="Name" htmlFor={`name_${record.id}`}>
-            <input
-              id={`name_${record.id}`}
-              type="text"
-              value={formValues.name ?? ""}
-              onChange={(e) =>
-                handleFieldChange("name", e.target.value || null)
-              }
-              disabled={!FIELD_PERMISSIONS.name}
-              placeholder="Enter full name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-            />
-          </FormField>
+          <form.Field
+            name="name"
+            validators={{
+              onBlur: z.string().nullable().optional(),
+            }}
+          >
+            {(field) => (
+              <FormField
+                label="Name"
+                htmlFor={`name_${record.id}`}
+                error={getFieldError(field.state.meta.errors)}
+              >
+                <input
+                  id={`name_${record.id}`}
+                  type="text"
+                  value={field.state.value ?? ""}
+                  onChange={(e) =>
+                    field.handleChange(e.target.value || null)
+                  }
+                  onBlur={field.handleBlur}
+                  disabled={!FIELD_PERMISSIONS.name}
+                  placeholder="Enter full name"
+                  className="input input-bordered w-full"
+                />
+              </FormField>
+            )}
+          </form.Field>
 
           {/* Email and Phone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Email" htmlFor={`email_${record.id}`}>
-              <input
-                id={`email_${record.id}`}
-                type="email"
-                value={formValues.email ?? ""}
-                onChange={(e) =>
-                  handleFieldChange("email", e.target.value || null)
-                }
-                disabled={!FIELD_PERMISSIONS.email}
-                placeholder="parent@example.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
-            </FormField>
+            <form.Field
+              name="email"
+              validators={{
+                onBlur: z.string().email().nullable().optional(),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Email"
+                  htmlFor={`email_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id={`email_${record.id}`}
+                    type="email"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(e.target.value || null)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.email}
+                    placeholder="parent@example.com"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
 
-            <FormField label="Phone Number" htmlFor={`phone_${record.id}`}>
-              <input
-                id={`phone_${record.id}`}
-                type="tel"
-                value={formValues.phone_number ?? ""}
-                onChange={(e) =>
-                  handleFieldChange("phone_number", e.target.value || null)
-                }
-                disabled={!FIELD_PERMISSIONS.phone_number}
-                placeholder="+91 9876543210"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
-            </FormField>
+            <form.Field
+              name="phone_number"
+              validators={{
+                onBlur: z.string().nullable().optional(),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Phone Number"
+                  htmlFor={`phone_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id={`phone_${record.id}`}
+                    type="tel"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(e.target.value || null)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.phone_number}
+                    placeholder="+91 9876543210"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
           </div>
 
           {/* Occupation and Organisation */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Occupation" htmlFor={`occupation_${record.id}`}>
-              <input
-                id={`occupation_${record.id}`}
-                type="text"
-                value={formValues.occupation ?? ""}
-                onChange={(e) =>
-                  handleFieldChange("occupation", e.target.value || null)
-                }
-                disabled={!FIELD_PERMISSIONS.occupation}
-                placeholder="e.g., Software Engineer"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
-            </FormField>
-
-            <FormField
-              label="Organisation"
-              htmlFor={`organisation_${record.id}`}
+            <form.Field
+              name="occupation"
+              validators={{
+                onBlur: z.string().nullable().optional(),
+              }}
             >
-              <input
-                id={`organisation_${record.id}`}
-                type="text"
-                value={formValues.organisation ?? ""}
-                onChange={(e) =>
-                  handleFieldChange("organisation", e.target.value || null)
-                }
-                disabled={!FIELD_PERMISSIONS.organisation}
-                placeholder="Enter company/organisation name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
-            </FormField>
+              {(field) => (
+                <FormField
+                  label="Occupation"
+                  htmlFor={`occupation_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id={`occupation_${record.id}`}
+                    type="text"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(e.target.value || null)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.occupation}
+                    placeholder="e.g., Software Engineer"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
+
+            <form.Field
+              name="organisation"
+              validators={{
+                onBlur: z.string().nullable().optional(),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Organisation"
+                  htmlFor={`organisation_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id={`organisation_${record.id}`}
+                    type="text"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(e.target.value || null)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.organisation}
+                    placeholder="Enter company/organisation name"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 pt-4 border-t border-gray-200">
-            <button
-              type="submit"
-              disabled={updateMutation.isPending}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {updateMutation.isPending && (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-              )}
-              Save Changes
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setFormValues({
-                  email: record.email,
-                  name: record.name,
-                  occupation: record.occupation,
-                  organisation: record.organisation,
-                  parent_type: record.parent_type,
-                  phone_number: record.phone_number
-                });
-                setIsExpanded(false);
-              }}
-              disabled={updateMutation.isPending}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-          </div>
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <div className="flex gap-4 pt-4 border-t border-base-300">
+                <button
+                  type="submit"
+                  disabled={!canSubmit || isSubmitting}
+                  className="btn btn-primary"
+                >
+                  {isSubmitting && (
+                    <span className="loading loading-spinner"></span>
+                  )}
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  disabled={isSubmitting}
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </form.Subscribe>
         </form>
       )}
     </div>
   );
-}
-
-// ==================== MAIN COMPONENT ====================
+}// ==================== MAIN COMPONENT ====================
 interface ParentDetailsFormProps {
   userId: number;
   onSuccess?: () => void;
@@ -738,60 +804,73 @@ interface ParentDetailsFormProps {
 export default function ParentDetailsForm({
   userId,
   onSuccess,
-  onError
+  onError,
 }: ParentDetailsFormProps) {
   // Fetch parent details
   const { data, isLoading, isError, error } = useQuery({
     enabled: !!userId,
     queryFn: async () => {
       const response = await api.get<GetParentDetailsResponse>(
-        `/parent-details/user/${userId}`
+        `/parent-details/user/${userId}`,
       );
       return response.data;
     },
-    queryKey: ["parent-details", userId]
+    queryKey: ["parent-details", userId],
   });
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <span className="loading loading-spinner loading-lg"></span>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="p-4 bg-red-50 text-red-600 rounded-lg">
-        Error loading parent details: {(error as Error)?.message}
+      <div className="alert alert-error">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span>Error loading parent details: {(error as Error)?.message}</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 max-w-4xl">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
-        Parent/Guardian Details
-      </h2>
+    <div className="space-y-6 max-w-4xl">
+      <h2 className="text-2xl font-bold mb-6">Parent/Guardian Details</h2>
 
       {/* Add New Parent Form */}
       <AddParentForm userId={userId} onSuccess={onSuccess} onError={onError} />
 
       {/* Existing Parent Records */}
-      {data && data.length > 0 ? (
-        data.map((record) => (
-          <ParentRecordForm
-            key={record.id}
-            record={record}
-            onSuccess={onSuccess}
-            onError={onError}
-          />
-        ))
-      ) : (
-        <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
-          No parent/guardian details found. Add your first record above.
-        </div>
-      )}
+      <div className="space-y-4">
+        {data && data.length > 0 ? (
+          data.map((record) => (
+            <ParentRecordForm
+              key={record.id}
+              record={record}
+              onSuccess={onSuccess}
+              onError={onError}
+            />
+          ))
+        ) : (
+          <div className="p-8 text-center opacity-70 bg-base-200 rounded-lg border-2 border-dashed border-base-300">
+            No parent/guardian details found. Add your first record above.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

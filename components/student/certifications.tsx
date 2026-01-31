@@ -7,62 +7,64 @@ import { api } from "@/lib/api";
 import { getFieldError } from "@/lib/form-helper";
 
 // ==================== SCHEMAS ====================
-const trainingItemSchema = z.object({
+const certificationItemSchema = z.object({
+  certification_type: z.string(),
   created_at: z.string().datetime(),
-  description: z.string(),
-  end_date: z.string(),
+  expiry_date: z.string(),
   id: z.number().int(),
-  institution: z.string(),
+  issue_date: z.string(),
+  organization: z.string(),
   proof_document: z.string(),
   proof_document_signed_url: z.string(),
+  score: z.number(),
   skills: z.array(z.string()),
-  start_date: z.string(),
   title: z.string(),
-  training_type: z.string(),
   updated_at: z.string().datetime(),
   user_id: z.number().int(),
   usn: z.string(),
 });
 
-const getTrainingsResponseSchema = z.array(trainingItemSchema);
+const getCertificationsResponseSchema = z.array(certificationItemSchema);
 
-type TrainingItem = z.infer<typeof trainingItemSchema>;
-type GetTrainingsResponse = z.infer<typeof getTrainingsResponseSchema>;
+type CertificationItem = z.infer<typeof certificationItemSchema>;
+type GetCertificationsResponse = z.infer<
+  typeof getCertificationsResponseSchema
+>;
 
 // Form values type for create
 type CreateFormValues = {
   title: string;
-  institution: string;
-  training_type: string | null;
-  start_date: string | null;
-  end_date: string | null;
+  organization: string;
+  certification_type: string | null;
   skills: string[];
-  description: string | null;
+  score: number | null;
+  issue_date: string | null;
+  expiry_date: string | null;
   proof_document: File | null;
 };
 
 // Form values type for update
 type UpdateFormValues = {
   title: string | null;
-  institution: string | null;
-  training_type: string | null;
-  start_date: string | null;
-  end_date: string | null;
+  organization: string | null;
+  certification_type: string | null;
   skills: string[];
-  description: string | null;
+  score: number | null;
+  issue_date: string | null;
+  expiry_date: string | null;
   proof_document: File | null;
 };
 
 // ==================== FIELD PERMISSIONS CONFIG ====================
 const FIELD_PERMISSIONS = {
-  description: true,
-  end_date: true,
-  institution: true,
+  certification_type: true,
+  expiry_date: true,
+  issue_date: true,
+  organization: true,
   proof_document: true,
+  score: true,
   skills: true,
-  start_date: true,
   title: true,
-  training_type: true,
 } as const;
 
 // ==================== HELPER COMPONENTS ====================
@@ -166,35 +168,40 @@ function SkillsInput({ value, onChange, disabled }: SkillsInputProps) {
   );
 }
 
-// ==================== ADD NEW TRAINING FORM ====================
-interface AddTrainingFormProps {
+// ==================== ADD NEW CERTIFICATION FORM ====================
+interface AddCertificationFormProps {
   userId: number;
   onSuccess?: () => void;
   onError?: (error: any) => void;
 }
 
-function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
+function AddCertificationForm({
+  userId,
+  onSuccess,
+  onError,
+}: AddCertificationFormProps) {
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (values: CreateFormValues) => {
-      console.log("=== CREATING NEW TRAINING ===");
+      console.log("=== CREATING NEW CERTIFICATION ===");
       console.log("Values:", values);
 
       const formData = new FormData();
       formData.append("user_id", userId.toString());
       formData.append("title", values.title);
-      formData.append("institution", values.institution);
+      formData.append("organization", values.organization);
 
-      if (values.training_type !== null)
-        formData.append("training_type", values.training_type);
-      if (values.start_date !== null)
-        formData.append("start_date", values.start_date);
-      if (values.end_date !== null) formData.append("end_date", values.end_date);
-      if (values.description !== null)
-        formData.append("description", values.description);
+      if (values.certification_type !== null)
+        formData.append("certification_type", values.certification_type);
+      if (values.score !== null)
+        formData.append("score", values.score.toString());
+      if (values.issue_date !== null)
+        formData.append("issue_date", values.issue_date);
+      if (values.expiry_date !== null)
+        formData.append("expiry_date", values.expiry_date);
 
       if (values.skills.length > 0) {
         formData.append("skills", values.skills.join(","));
@@ -204,7 +211,7 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
         formData.append("proof_document", values.proof_document);
       }
 
-      const response = await api.post(`/trainings/user`, formData, {
+      const response = await api.post(`/certifications/user`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -217,7 +224,7 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["trainings", userId],
+        queryKey: ["certifications", userId],
       });
       form.reset();
       setIsExpanded(false);
@@ -229,12 +236,12 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
   const form = useForm({
     defaultValues: {
       title: "",
-      institution: "",
-      training_type: null,
-      start_date: null,
-      end_date: null,
+      organization: "",
+      certification_type: null,
       skills: [],
-      description: null,
+      score: null,
+      issue_date: null,
+      expiry_date: null,
       proof_document: null,
     } as CreateFormValues,
     onSubmit: async ({ value }) => {
@@ -266,10 +273,10 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Add New Training
+            Add New Certification
           </h4>
           <p className="text-sm opacity-70 mt-1">
-            Click to add a new training experience
+            Click to add a new certification
           </p>
         </div>
         <button
@@ -307,7 +314,7 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
           }}
           className="p-6 space-y-6 bg-base-100"
         >
-          {/* Title and Institution */}
+          {/* Title and Organization */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <form.Field
               name="title"
@@ -317,7 +324,7 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
             >
               {(field) => (
                 <FormField
-                  label="Training Title"
+                  label="Certification Title"
                   htmlFor="title_new"
                   required
                   error={getFieldError(field.state.meta.errors)}
@@ -329,7 +336,7 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
                     disabled={!FIELD_PERMISSIONS.title}
-                    placeholder="e.g., Full Stack Web Development"
+                    placeholder="e.g., AWS Certified Solutions Architect"
                     className="input input-bordered w-full"
                   />
                 </FormField>
@@ -337,26 +344,26 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
             </form.Field>
 
             <form.Field
-              name="institution"
+              name="organization"
               validators={{
-                onBlur: z.string().min(1, "Institution is required"),
+                onBlur: z.string().min(1, "Organization is required"),
               }}
             >
               {(field) => (
                 <FormField
-                  label="Institution"
-                  htmlFor="institution_new"
+                  label="Issuing Organization"
+                  htmlFor="organization_new"
                   required
                   error={getFieldError(field.state.meta.errors)}
                 >
                   <input
-                    id="institution_new"
+                    id="organization_new"
                     type="text"
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.institution}
-                    placeholder="e.g., Coursera, Udemy"
+                    disabled={!FIELD_PERMISSIONS.organization}
+                    placeholder="e.g., Amazon Web Services"
                     className="input input-bordered w-full"
                   />
                 </FormField>
@@ -364,68 +371,109 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
             </form.Field>
           </div>
 
-          {/* Training Type */}
-          <form.Field name="training_type">
-            {(field) => (
-              <FormField
-                label="Training Type"
-                htmlFor="training_type_new"
-                error={getFieldError(field.state.meta.errors)}
-              >
-                <input
-                  id="training_type_new"
-                  type="text"
-                  value={field.state.value ?? ""}
-                  onChange={(e) => field.handleChange(e.target.value || null)}
-                  onBlur={field.handleBlur}
-                  disabled={!FIELD_PERMISSIONS.training_type}
-                  placeholder="e.g., Online Course, Workshop, Bootcamp"
-                  className="input input-bordered w-full"
-                />
-              </FormField>
-            )}
-          </form.Field>
-
-          {/* Start Date and End Date */}
+          {/* Certification Type and Score */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <form.Field name="start_date">
+            <form.Field name="certification_type">
               {(field) => (
                 <FormField
-                  label="Start Date"
-                  htmlFor="start_date_new"
+                  label="Certification Type"
+                  htmlFor="certification_type_new"
                   error={getFieldError(field.state.meta.errors)}
                 >
                   <input
-                    id="start_date_new"
-                    type="date"
+                    id="certification_type_new"
+                    type="text"
                     value={field.state.value ?? ""}
                     onChange={(e) =>
                       field.handleChange(e.target.value || null)
                     }
                     onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.start_date}
+                    disabled={!FIELD_PERMISSIONS.certification_type}
+                    placeholder="e.g., Professional, Associate"
                     className="input input-bordered w-full"
                   />
                 </FormField>
               )}
             </form.Field>
 
-            <form.Field name="end_date">
+            <form.Field
+              name="score"
+              validators={{
+                onBlur: z
+                  .number()
+                  .min(0, "Score must be at least 0")
+                  .max(100, "Score must be at most 100")
+                  .nullable(),
+              }}
+            >
               {(field) => (
                 <FormField
-                  label="End Date"
-                  htmlFor="end_date_new"
+                  label="Score"
+                  htmlFor="score_new"
                   error={getFieldError(field.state.meta.errors)}
                 >
                   <input
-                    id="end_date_new"
+                    id="score_new"
+                    type="number"
+                    step="0.01"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value === "" ? null : parseFloat(e.target.value),
+                      )
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.score}
+                    placeholder="e.g., 85.5"
+                    min="0"
+                    max="100"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
+          </div>
+
+          {/* Issue Date and Expiry Date */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form.Field name="issue_date">
+              {(field) => (
+                <FormField
+                  label="Issue Date"
+                  htmlFor="issue_date_new"
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="issue_date_new"
                     type="date"
                     value={field.state.value ?? ""}
                     onChange={(e) =>
                       field.handleChange(e.target.value || null)
                     }
                     onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.end_date}
+                    disabled={!FIELD_PERMISSIONS.issue_date}
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
+
+            <form.Field name="expiry_date">
+              {(field) => (
+                <FormField
+                  label="Expiry Date"
+                  htmlFor="expiry_date_new"
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="expiry_date_new"
+                    type="date"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(e.target.value || null)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.expiry_date}
                     className="input input-bordered w-full"
                   />
                 </FormField>
@@ -437,7 +485,7 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
           <form.Field name="skills">
             {(field) => (
               <FormField
-                label="Skills Learned"
+                label="Skills Covered"
                 error={getFieldError(field.state.meta.errors)}
               >
                 <SkillsInput
@@ -449,35 +497,13 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
             )}
           </form.Field>
 
-          {/* Description */}
-          <form.Field name="description">
-            {(field) => (
-              <FormField
-                label="Description"
-                htmlFor="description_new"
-                error={getFieldError(field.state.meta.errors)}
-              >
-                <textarea
-                  id="description_new"
-                  value={field.state.value ?? ""}
-                  onChange={(e) => field.handleChange(e.target.value || null)}
-                  onBlur={field.handleBlur}
-                  disabled={!FIELD_PERMISSIONS.description}
-                  placeholder="Describe the training content and what you learned"
-                  rows={4}
-                  className="textarea textarea-bordered w-full"
-                />
-              </FormField>
-            )}
-          </form.Field>
-
           {/* Proof Document */}
           <div className="divider">Proof Document (Optional)</div>
 
           <form.Field name="proof_document">
             {(field) => (
               <FormField
-                label="Upload Training Certificate/Proof"
+                label="Upload Certification Document"
                 htmlFor="proof_document_new"
                 error={getFieldError(field.state.meta.errors)}
               >
@@ -501,7 +527,7 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
                   </span>
                 </label>
                 {field.state.value && (
-                  <div className="alert alert-info mt-2">
+                  <div className="alert alert-soft mt-2">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -536,7 +562,7 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
                   {isSubmitting && (
                     <span className="loading loading-spinner"></span>
                   )}
-                  Add Training
+                  Add Certification
                 </button>
                 <button
                   type="button"
@@ -558,18 +584,18 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
   );
 }
 
-// ==================== SINGLE TRAINING RECORD FORM ====================
-interface TrainingRecordFormProps {
-  record: TrainingItem;
+// ==================== SINGLE CERTIFICATION RECORD FORM ====================
+interface CertificationRecordFormProps {
+  record: CertificationItem;
   onSuccess?: () => void;
   onError?: (error: any) => void;
 }
 
-function TrainingRecordForm({
+function CertificationRecordForm({
   record,
   onSuccess,
   onError,
-}: TrainingRecordFormProps) {
+}: CertificationRecordFormProps) {
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -581,15 +607,16 @@ function TrainingRecordForm({
 
       const formData = new FormData();
       if (values.title !== null) formData.append("title", values.title);
-      if (values.institution !== null)
-        formData.append("institution", values.institution);
-      if (values.training_type !== null)
-        formData.append("training_type", values.training_type);
-      if (values.start_date !== null)
-        formData.append("start_date", values.start_date);
-      if (values.end_date !== null) formData.append("end_date", values.end_date);
-      if (values.description !== null)
-        formData.append("description", values.description);
+      if (values.organization !== null)
+        formData.append("organization", values.organization);
+      if (values.certification_type !== null)
+        formData.append("certification_type", values.certification_type);
+      if (values.score !== null)
+        formData.append("score", values.score.toString());
+      if (values.issue_date !== null)
+        formData.append("issue_date", values.issue_date);
+      if (values.expiry_date !== null)
+        formData.append("expiry_date", values.expiry_date);
 
       if (values.skills.length > 0) {
         formData.append("skills", values.skills.join(","));
@@ -599,11 +626,15 @@ function TrainingRecordForm({
         formData.append("proof_document", values.proof_document);
       }
 
-      const response = await api.patch(`/trainings/${record.id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+      const response = await api.patch(
+        `/certifications/${record.id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
-      });
+      );
       return response.data;
     },
     onError: (error: any) => {
@@ -612,7 +643,7 @@ function TrainingRecordForm({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["trainings", record.user_id],
+        queryKey: ["certifications", record.user_id],
       });
       setIsExpanded(false);
       onSuccess?.();
@@ -623,12 +654,12 @@ function TrainingRecordForm({
   const form = useForm({
     defaultValues: {
       title: record.title,
-      institution: record.institution,
-      training_type: record.training_type,
-      start_date: record.start_date,
-      end_date: record.end_date,
+      organization: record.organization,
+      certification_type: record.certification_type,
       skills: record.skills || [],
-      description: record.description,
+      score: record.score,
+      issue_date: record.issue_date,
+      expiry_date: record.expiry_date,
       proof_document: null,
     } as UpdateFormValues,
     onSubmit: async ({ value }) => {
@@ -642,39 +673,26 @@ function TrainingRecordForm({
   useEffect(() => {
     if (!form.state.isDirty) {
       form.setFieldValue("title", record.title);
-      form.setFieldValue("institution", record.institution);
-      form.setFieldValue("training_type", record.training_type);
-      form.setFieldValue("start_date", record.start_date);
-      form.setFieldValue("end_date", record.end_date);
+      form.setFieldValue("organization", record.organization);
+      form.setFieldValue("certification_type", record.certification_type);
       form.setFieldValue("skills", record.skills || []);
-      form.setFieldValue("description", record.description);
+      form.setFieldValue("score", record.score);
+      form.setFieldValue("issue_date", record.issue_date);
+      form.setFieldValue("expiry_date", record.expiry_date);
       form.setFieldValue("proof_document", null);
     }
   }, [record, form]);
 
   const handleReset = () => {
     form.setFieldValue("title", record.title);
-    form.setFieldValue("institution", record.institution);
-    form.setFieldValue("training_type", record.training_type);
-    form.setFieldValue("start_date", record.start_date);
-    form.setFieldValue("end_date", record.end_date);
+    form.setFieldValue("organization", record.organization);
+    form.setFieldValue("certification_type", record.certification_type);
     form.setFieldValue("skills", record.skills || []);
-    form.setFieldValue("description", record.description);
+    form.setFieldValue("score", record.score);
+    form.setFieldValue("issue_date", record.issue_date);
+    form.setFieldValue("expiry_date", record.expiry_date);
     form.setFieldValue("proof_document", null);
     setIsExpanded(false);
-  };
-
-  // Calculate duration
-  const getDuration = () => {
-    if (!record.start_date || !record.end_date) return "Duration not set";
-    const start = new Date(record.start_date);
-    const end = new Date(record.end_date);
-    const diffMonths = Math.round(
-      (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30),
-    );
-    return diffMonths > 0
-      ? `${diffMonths} month${diffMonths > 1 ? "s" : ""}`
-      : "Less than a month";
   };
 
   return (
@@ -688,7 +706,11 @@ function TrainingRecordForm({
           <div className="flex-1">
             <h4 className="font-semibold text-lg">{record.title}</h4>
             <p className="text-sm opacity-70 mt-1">
-              {record.institution} • {getDuration()}
+              {record.organization} •{" "}
+              {record.issue_date
+                ? new Date(record.issue_date).getFullYear()
+                : "No date"}
+              {record.score && ` • Score: ${record.score}`}
             </p>
             {record.proof_document_signed_url && (
               <Link
@@ -748,12 +770,12 @@ function TrainingRecordForm({
           }}
           className="card-body pt-0 space-y-6"
         >
-          {/* Title and Institution */}
+          {/* Title and Organization */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <form.Field name="title">
               {(field) => (
                 <FormField
-                  label="Training Title"
+                  label="Certification Title"
                   htmlFor={`title_${record.id}`}
                   error={getFieldError(field.state.meta.errors)}
                 >
@@ -766,30 +788,30 @@ function TrainingRecordForm({
                     }
                     onBlur={field.handleBlur}
                     disabled={!FIELD_PERMISSIONS.title}
-                    placeholder="e.g., Full Stack Web Development"
+                    placeholder="e.g., AWS Certified Solutions Architect"
                     className="input input-bordered w-full"
                   />
                 </FormField>
               )}
             </form.Field>
 
-            <form.Field name="institution">
+            <form.Field name="organization">
               {(field) => (
                 <FormField
-                  label="Institution"
-                  htmlFor={`institution_${record.id}`}
+                  label="Issuing Organization"
+                  htmlFor={`organization_${record.id}`}
                   error={getFieldError(field.state.meta.errors)}
                 >
                   <input
-                    id={`institution_${record.id}`}
+                    id={`organization_${record.id}`}
                     type="text"
                     value={field.state.value ?? ""}
                     onChange={(e) =>
                       field.handleChange(e.target.value || null)
                     }
                     onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.institution}
-                    placeholder="e.g., Coursera, Udemy"
+                    disabled={!FIELD_PERMISSIONS.organization}
+                    placeholder="e.g., Amazon Web Services"
                     className="input input-bordered w-full"
                   />
                 </FormField>
@@ -797,68 +819,109 @@ function TrainingRecordForm({
             </form.Field>
           </div>
 
-          {/* Training Type */}
-          <form.Field name="training_type">
-            {(field) => (
-              <FormField
-                label="Training Type"
-                htmlFor={`training_type_${record.id}`}
-                error={getFieldError(field.state.meta.errors)}
-              >
-                <input
-                  id={`training_type_${record.id}`}
-                  type="text"
-                  value={field.state.value ?? ""}
-                  onChange={(e) => field.handleChange(e.target.value || null)}
-                  onBlur={field.handleBlur}
-                  disabled={!FIELD_PERMISSIONS.training_type}
-                  placeholder="e.g., Online Course, Workshop, Bootcamp"
-                  className="input input-bordered w-full"
-                />
-              </FormField>
-            )}
-          </form.Field>
-
-          {/* Start Date and End Date */}
+          {/* Certification Type and Score */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <form.Field name="start_date">
+            <form.Field name="certification_type">
               {(field) => (
                 <FormField
-                  label="Start Date"
-                  htmlFor={`start_date_${record.id}`}
+                  label="Certification Type"
+                  htmlFor={`certification_type_${record.id}`}
                   error={getFieldError(field.state.meta.errors)}
                 >
                   <input
-                    id={`start_date_${record.id}`}
-                    type="date"
+                    id={`certification_type_${record.id}`}
+                    type="text"
                     value={field.state.value ?? ""}
                     onChange={(e) =>
                       field.handleChange(e.target.value || null)
                     }
                     onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.start_date}
+                    disabled={!FIELD_PERMISSIONS.certification_type}
+                    placeholder="e.g., Professional, Associate"
                     className="input input-bordered w-full"
                   />
                 </FormField>
               )}
             </form.Field>
 
-            <form.Field name="end_date">
+            <form.Field
+              name="score"
+              validators={{
+                onBlur: z
+                  .number()
+                  .min(0, "Score must be at least 0")
+                  .max(100, "Score must be at most 100")
+                  .nullable(),
+              }}
+            >
               {(field) => (
                 <FormField
-                  label="End Date"
-                  htmlFor={`end_date_${record.id}`}
+                  label="Score"
+                  htmlFor={`score_${record.id}`}
                   error={getFieldError(field.state.meta.errors)}
                 >
                   <input
-                    id={`end_date_${record.id}`}
+                    id={`score_${record.id}`}
+                    type="number"
+                    step="0.01"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value === "" ? null : parseFloat(e.target.value),
+                      )
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.score}
+                    placeholder="e.g., 85.5"
+                    min="0"
+                    max="100"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
+          </div>
+
+          {/* Issue Date and Expiry Date */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form.Field name="issue_date">
+              {(field) => (
+                <FormField
+                  label="Issue Date"
+                  htmlFor={`issue_date_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id={`issue_date_${record.id}`}
                     type="date"
                     value={field.state.value ?? ""}
                     onChange={(e) =>
                       field.handleChange(e.target.value || null)
                     }
                     onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.end_date}
+                    disabled={!FIELD_PERMISSIONS.issue_date}
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
+
+            <form.Field name="expiry_date">
+              {(field) => (
+                <FormField
+                  label="Expiry Date"
+                  htmlFor={`expiry_date_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id={`expiry_date_${record.id}`}
+                    type="date"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(e.target.value || null)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.expiry_date}
                     className="input input-bordered w-full"
                   />
                 </FormField>
@@ -870,7 +933,7 @@ function TrainingRecordForm({
           <form.Field name="skills">
             {(field) => (
               <FormField
-                label="Skills Learned"
+                label="Skills Covered"
                 error={getFieldError(field.state.meta.errors)}
               >
                 <SkillsInput
@@ -882,33 +945,11 @@ function TrainingRecordForm({
             )}
           </form.Field>
 
-          {/* Description */}
-          <form.Field name="description">
-            {(field) => (
-              <FormField
-                label="Description"
-                htmlFor={`description_${record.id}`}
-                error={getFieldError(field.state.meta.errors)}
-              >
-                <textarea
-                  id={`description_${record.id}`}
-                  value={field.state.value ?? ""}
-                  onChange={(e) => field.handleChange(e.target.value || null)}
-                  onBlur={field.handleBlur}
-                  disabled={!FIELD_PERMISSIONS.description}
-                  placeholder="Describe the training content and what you learned"
-                  rows={4}
-                  className="textarea textarea-bordered w-full"
-                />
-              </FormField>
-            )}
-          </form.Field>
-
           {/* Proof Document */}
           <div className="divider">Proof Document</div>
 
           {record.proof_document_signed_url && (
-            <div className="alert alert-info">
+            <div className="alert alert-soft">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -924,7 +965,7 @@ function TrainingRecordForm({
               </svg>
               <div>
                 <div className="text-sm font-medium">
-                  Current training certificate uploaded
+                  Current certification document uploaded
                 </div>
                 <Link
                   href={record.proof_document_signed_url}
@@ -941,7 +982,7 @@ function TrainingRecordForm({
           <form.Field name="proof_document">
             {(field) => (
               <FormField
-                label="Upload New Certificate/Proof"
+                label="Upload New Certification Document"
                 htmlFor={`proof_document_${record.id}`}
                 error={getFieldError(field.state.meta.errors)}
               >
@@ -1015,26 +1056,26 @@ function TrainingRecordForm({
 }
 
 // ==================== MAIN COMPONENT ====================
-interface TrainingsFormProps {
+interface CertificationsFormProps {
   userId: number;
   onSuccess?: () => void;
   onError?: (error: any) => void;
 }
 
-export default function TrainingsForm({
+export default function CertificationsForm({
   userId,
   onSuccess,
   onError,
-}: TrainingsFormProps) {
+}: CertificationsFormProps) {
   const { data, isLoading, isError, error } = useQuery({
     enabled: !!userId,
     queryFn: async () => {
-      const response = await api.get<GetTrainingsResponse>(
-        `/trainings/user/${userId}`,
+      const response = await api.get<GetCertificationsResponse>(
+        `/certifications/user/${userId}`,
       );
       return response.data;
     },
-    queryKey: ["trainings", userId],
+    queryKey: ["certifications", userId],
   });
 
   if (isLoading) {
@@ -1061,23 +1102,27 @@ export default function TrainingsForm({
             d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <span>Error loading trainings: {(error as Error)?.message}</span>
+        <span>Error loading certifications: {(error as Error)?.message}</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h2 className="text-2xl font-bold mb-6">Trainings</h2>
+      <h2 className="text-2xl font-bold mb-6">Certifications</h2>
 
-      {/* Add New Training Form */}
-      <AddTrainingForm userId={userId} onSuccess={onSuccess} onError={onError} />
+      {/* Add New Certification Form */}
+      <AddCertificationForm
+        userId={userId}
+        onSuccess={onSuccess}
+        onError={onError}
+      />
 
-      {/* Existing Training Records */}
+      {/* Existing Certification Records */}
       <div className="space-y-4">
         {data && data.length > 0 ? (
           data.map((record) => (
-            <TrainingRecordForm
+            <CertificationRecordForm
               key={record.id}
               record={record}
               onSuccess={onSuccess}
@@ -1086,7 +1131,7 @@ export default function TrainingsForm({
           ))
         ) : (
           <div className="p-8 text-center opacity-70 bg-base-200 rounded-lg border-2 border-dashed border-base-300">
-            No trainings found. Add your first training above.
+            No certifications found. Add your first certification above.
           </div>
         )}
       </div>

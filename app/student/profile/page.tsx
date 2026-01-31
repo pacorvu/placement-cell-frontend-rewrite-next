@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import ProjectsForm from "@/components/student/project.form";
-import CertificationsForm from "@/components/student/career";
+import ProjectsForm from "@/components/student/project";
+import CertificationsForm from "@/components/student/certifications";
 import PublicationsForm from "@/components/student/publications";
 import OtherExperiencesForm from "@/components/student/other";
 import SemesterAcademicsForm from "@/components/student/academics";
@@ -10,9 +10,9 @@ import { toast } from "sonner";
 import ProfileDetailsForm from "@/components/student/details";
 import ProfileCommunicationForm from "@/components/student/contact";
 import ParentDetailsForm from "@/components/student/parents";
-import PersonalDetailsForm from "@/components/student/personal-information.form";
-import EducationalHistoryForm from "@/components/student/educational-history.form";
-import InternshipForm from "@/components/student/internship.form";
+import PersonalDetailsForm from "@/components/student/personal-information";
+import EducationalHistoryForm from "@/components/student/educational-history";
+import InternshipForm from "@/components/student/internship";
 import TrainingsForm from "@/components/student/trainings";
 import ExtracurricularForm from "@/components/student/extra-ciricular";
 
@@ -102,12 +102,6 @@ const sidebarItems = [
     addable: true,
     icon: <i className="material-icons h-5 w-5">work_outline</i>
   },
-  // {
-  //   id: "resume",
-  //   label: "Resume",
-  //   hasData: false,
-  //   icon: <i className="material-icons h-5 w-5">description</i>
-  // },
 ];
 
 export default function StudentProfile() {
@@ -147,39 +141,6 @@ export default function StudentProfile() {
 
         {/* Main Content Area */}
         <main className="flex-1 p-8">
-          {/* Profile Header */}
-          <div className="card bg-base-100 shadow border border-base-300 mb-6">
-            <div className="card-body">
-              <div className="flex items-start justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-6">
-                  <div className="relative">
-                    <div className="avatar placeholder">
-                      <div className="bg-neutral text-neutral-content rounded-full w-24">
-                        <span className="text-3xl">U</span>
-                      </div>
-                    </div>
-                    <button className="btn btn-circle btn-sm btn-primary absolute -bottom-1 -right-1">
-                      <i className="material-icons h-4 w-4">camera_alt</i>
-                    </button>
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold text-base-content">
-                      Student Name
-                    </h1>
-                    <p className="text-base-content/60">student@test.com</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className={`btn ${isEditing ? "btn-primary" : "btn-outline btn-primary"}`}
-                >
-                  {isEditing ? "Save" : "Edit"}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Content based on active section */}
           {activeSection === "personal" && (
             <PersonalDetailsForm
               userId={userId}
@@ -287,27 +248,6 @@ export default function StudentProfile() {
 
           {/* {activeSection === "resume" && ( */}
           {/*   <ResumeForm isEditing={isEditing} /> */}
-          {/* )} */}
-
-
-
-          {/* For other sections */}
-          {/* {!sidebarItems.find((item) => item.id === activeSection)?.addable && */}
-          {/*   activeSection !== "personal" && ( */}
-          {/*     <div className="card bg-base-100 shadow border border-base-300"> */}
-          {/*       <div className="card-body"> */}
-          {/*         <div className="alert alert-info"> */}
-          {/*           <i className="material-icons shrink-0 w-6 h-6">info</i> */}
-          {/*           <div> */}
-          {/*             <h3 className="font-bold">Section Incomplete</h3> */}
-          {/*             <div className="text-sm"> */}
-          {/*               Complete this section to improve your profile visibility */}
-          {/*               to recruiters. */}
-          {/*             </div> */}
-          {/*           </div> */}
-          {/*         </div> */}
-          {/*       </div> */}
-          {/*     </div> */}
           {/* )} */}
         </main>
       </div>

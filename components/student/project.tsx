@@ -7,62 +7,46 @@ import { api } from "@/lib/api";
 import { getFieldError } from "@/lib/form-helper";
 
 // ==================== SCHEMAS ====================
-const trainingItemSchema = z.object({
+const projectItemSchema = z.object({
   created_at: z.string().datetime(),
-  description: z.string(),
-  end_date: z.string(),
-  id: z.number().int(),
-  institution: z.string(),
-  proof_document: z.string(),
-  proof_document_signed_url: z.string(),
-  skills: z.array(z.string()),
-  start_date: z.string(),
-  title: z.string(),
-  training_type: z.string(),
+  description: z.string().nullable(),
+  id: z.number(),
+  mentor_name: z.string().nullable(),
+  project_link: z.string().nullable(),
+  skills: z.array(z.string()).nullable(),
+  snaps: z.array(z.string()).nullable(),
+  snaps_signed_urls: z.array(z.string()).nullable(),
+  title: z.string().nullable(),
   updated_at: z.string().datetime(),
-  user_id: z.number().int(),
+  user_id: z.number(),
   usn: z.string(),
 });
 
-const getTrainingsResponseSchema = z.array(trainingItemSchema);
+const getProjectsResponseSchema = z.array(projectItemSchema);
 
-type TrainingItem = z.infer<typeof trainingItemSchema>;
-type GetTrainingsResponse = z.infer<typeof getTrainingsResponseSchema>;
+type ProjectItem = z.infer<typeof projectItemSchema>;
+type GetProjectsResponse = z.infer<typeof getProjectsResponseSchema>;
 
-// Form values type for create
-type CreateFormValues = {
-  title: string;
-  institution: string;
-  training_type: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  skills: string[];
-  description: string | null;
-  proof_document: File | null;
-};
-
-// Form values type for update
-type UpdateFormValues = {
+// Form values type
+type FormValues = {
   title: string | null;
-  institution: string | null;
-  training_type: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  skills: string[];
   description: string | null;
-  proof_document: File | null;
+  skills: string[];
+  project_link: string | null;
+  mentor_name: string | null;
+  snaps: File[];
+  replace_snaps: boolean;
 };
 
 // ==================== FIELD PERMISSIONS CONFIG ====================
 const FIELD_PERMISSIONS = {
   description: true,
-  end_date: true,
-  institution: true,
-  proof_document: true,
+  mentor_name: true,
+  project_link: true,
+  replace_snaps: true,
   skills: true,
-  start_date: true,
+  snaps: true,
   title: true,
-  training_type: true,
 } as const;
 
 // ==================== HELPER COMPONENTS ====================
@@ -166,45 +150,93 @@ function SkillsInput({ value, onChange, disabled }: SkillsInputProps) {
   );
 }
 
-// ==================== ADD NEW TRAINING FORM ====================
-interface AddTrainingFormProps {
+interface ImagePreviewProps {
+  images: string[];
+  onRemove?: (index: number) => void;
+  disabled?: boolean;
+}
+
+function ImagePreview({ images, onRemove, disabled }: ImagePreviewProps) {
+  if (images.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {images.map((url, index) => (
+        <div key={index} className="relative group card bg-base-200">
+          <figure className="aspect-square">
+            <img
+              src={url}
+              alt={`Preview ${index + 1}`}
+              className="w-full h-full object-cover"
+            />
+          </figure>
+          {onRemove && !disabled && (
+            <button
+              type="button"
+              onClick={() => onRemove(index)}
+              className="btn btn-circle btn-error btn-sm absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ==================== ADD NEW PROJECT FORM ====================
+interface AddProjectFormProps {
   userId: number;
   onSuccess?: () => void;
   onError?: (error: any) => void;
 }
 
-function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
+function AddProjectForm({ userId, onSuccess, onError }: AddProjectFormProps) {
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: async (values: CreateFormValues) => {
-      console.log("=== CREATING NEW TRAINING ===");
+    mutationFn: async (values: FormValues) => {
+      console.log("=== CREATING NEW PROJECT ===");
       console.log("Values:", values);
 
       const formData = new FormData();
-      formData.append("user_id", userId.toString());
-      formData.append("title", values.title);
-      formData.append("institution", values.institution);
-
-      if (values.training_type !== null)
-        formData.append("training_type", values.training_type);
-      if (values.start_date !== null)
-        formData.append("start_date", values.start_date);
-      if (values.end_date !== null) formData.append("end_date", values.end_date);
+      if (values.title !== null) formData.append("title", values.title);
       if (values.description !== null)
         formData.append("description", values.description);
+      if (values.project_link !== null)
+        formData.append("project_link", values.project_link);
+      if (values.mentor_name !== null)
+        formData.append("mentor_name", values.mentor_name);
 
       if (values.skills.length > 0) {
         formData.append("skills", values.skills.join(","));
       }
 
-      if (values.proof_document) {
-        formData.append("proof_document", values.proof_document);
+      formData.append("user_id", userId.toString());
+
+      if (values.snaps.length > 0) {
+        values.snaps.forEach((file) => {
+          formData.append("snaps", file);
+        });
       }
 
-      const response = await api.post(`/trainings/user`, formData, {
+      const response = await api.post(`/projects/user`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -217,9 +249,11 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["trainings", userId],
+        queryKey: ["projects", userId],
       });
       form.reset();
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+      setPreviewUrls([]);
       setIsExpanded(false);
       onSuccess?.();
     },
@@ -228,21 +262,47 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
   // TanStack Form setup
   const form = useForm({
     defaultValues: {
-      title: "",
-      institution: "",
-      training_type: null,
-      start_date: null,
-      end_date: null,
-      skills: [],
+      title: null,
       description: null,
-      proof_document: null,
-    } as CreateFormValues,
+      skills: [],
+      project_link: null,
+      mentor_name: null,
+      snaps: [],
+      replace_snaps: false,
+    } as FormValues,
     onSubmit: async ({ value }) => {
       console.log("=== FORM SUBMIT ===");
       console.log("Current form values:", value);
       await createMutation.mutateAsync(value);
     },
   });
+
+  const handleImagesChange = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files);
+    const currentSnaps = form.getFieldValue("snaps") || [];
+    form.setFieldValue("snaps", [...currentSnaps, ...newFiles] as any);
+
+    const newUrls = newFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls((prev) => [...prev, ...newUrls]);
+  };
+
+  const removeImage = (index: number) => {
+    URL.revokeObjectURL(previewUrls[index]);
+    const currentSnaps = form.getFieldValue("snaps") || [];
+    form.setFieldValue(
+      "snaps",
+      currentSnaps.filter((_, i) => i !== index) as any,
+    );
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
 
   return (
     <div className="border-2 border-dashed border-primary rounded-lg overflow-hidden bg-primary/5">
@@ -266,11 +326,9 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Add New Training
+            Add New Project
           </h4>
-          <p className="text-sm opacity-70 mt-1">
-            Click to add a new training experience
-          </p>
+          <p className="text-sm opacity-70 mt-1">Click to add a new project</p>
         </div>
         <button
           type="button"
@@ -307,143 +365,23 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
           }}
           className="p-6 space-y-6 bg-base-100"
         >
-          {/* Title and Institution */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <form.Field
-              name="title"
-              validators={{
-                onBlur: z.string().min(1, "Title is required"),
-              }}
-            >
-              {(field) => (
-                <FormField
-                  label="Training Title"
-                  htmlFor="title_new"
-                  required
-                  error={getFieldError(field.state.meta.errors)}
-                >
-                  <input
-                    id="title_new"
-                    type="text"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.title}
-                    placeholder="e.g., Full Stack Web Development"
-                    className="input input-bordered w-full"
-                  />
-                </FormField>
-              )}
-            </form.Field>
-
-            <form.Field
-              name="institution"
-              validators={{
-                onBlur: z.string().min(1, "Institution is required"),
-              }}
-            >
-              {(field) => (
-                <FormField
-                  label="Institution"
-                  htmlFor="institution_new"
-                  required
-                  error={getFieldError(field.state.meta.errors)}
-                >
-                  <input
-                    id="institution_new"
-                    type="text"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.institution}
-                    placeholder="e.g., Coursera, Udemy"
-                    className="input input-bordered w-full"
-                  />
-                </FormField>
-              )}
-            </form.Field>
-          </div>
-
-          {/* Training Type */}
-          <form.Field name="training_type">
+          {/* Title */}
+          <form.Field name="title">
             {(field) => (
               <FormField
-                label="Training Type"
-                htmlFor="training_type_new"
+                label="Project Title"
+                htmlFor="title_new"
                 error={getFieldError(field.state.meta.errors)}
               >
                 <input
-                  id="training_type_new"
+                  id="title_new"
                   type="text"
                   value={field.state.value ?? ""}
                   onChange={(e) => field.handleChange(e.target.value || null)}
                   onBlur={field.handleBlur}
-                  disabled={!FIELD_PERMISSIONS.training_type}
-                  placeholder="e.g., Online Course, Workshop, Bootcamp"
+                  disabled={!FIELD_PERMISSIONS.title}
+                  placeholder="e.g., E-commerce Website"
                   className="input input-bordered w-full"
-                />
-              </FormField>
-            )}
-          </form.Field>
-
-          {/* Start Date and End Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <form.Field name="start_date">
-              {(field) => (
-                <FormField
-                  label="Start Date"
-                  htmlFor="start_date_new"
-                  error={getFieldError(field.state.meta.errors)}
-                >
-                  <input
-                    id="start_date_new"
-                    type="date"
-                    value={field.state.value ?? ""}
-                    onChange={(e) =>
-                      field.handleChange(e.target.value || null)
-                    }
-                    onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.start_date}
-                    className="input input-bordered w-full"
-                  />
-                </FormField>
-              )}
-            </form.Field>
-
-            <form.Field name="end_date">
-              {(field) => (
-                <FormField
-                  label="End Date"
-                  htmlFor="end_date_new"
-                  error={getFieldError(field.state.meta.errors)}
-                >
-                  <input
-                    id="end_date_new"
-                    type="date"
-                    value={field.state.value ?? ""}
-                    onChange={(e) =>
-                      field.handleChange(e.target.value || null)
-                    }
-                    onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.end_date}
-                    className="input input-bordered w-full"
-                  />
-                </FormField>
-              )}
-            </form.Field>
-          </div>
-
-          {/* Skills */}
-          <form.Field name="skills">
-            {(field) => (
-              <FormField
-                label="Skills Learned"
-                error={getFieldError(field.state.meta.errors)}
-              >
-                <SkillsInput
-                  value={field.state.value}
-                  onChange={(skills) => field.handleChange(skills)}
-                  disabled={!FIELD_PERMISSIONS.skills}
                 />
               </FormField>
             )}
@@ -463,7 +401,7 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
                   onChange={(e) => field.handleChange(e.target.value || null)}
                   onBlur={field.handleBlur}
                   disabled={!FIELD_PERMISSIONS.description}
-                  placeholder="Describe the training content and what you learned"
+                  placeholder="Describe your project, its features, and technologies used"
                   rows={4}
                   className="textarea textarea-bordered w-full"
                 />
@@ -471,51 +409,105 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
             )}
           </form.Field>
 
-          {/* Proof Document */}
-          <div className="divider">Proof Document (Optional)</div>
+          {/* Project Link and Mentor Name */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form.Field name="project_link">
+              {(field) => (
+                <FormField
+                  label="Project Link"
+                  htmlFor="project_link_new"
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="project_link_new"
+                    type="url"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(e.target.value || null)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.project_link}
+                    placeholder="https://github.com/username/project"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
 
-          <form.Field name="proof_document">
+            <form.Field name="mentor_name">
+              {(field) => (
+                <FormField
+                  label="Mentor Name"
+                  htmlFor="mentor_name_new"
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="mentor_name_new"
+                    type="text"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(e.target.value || null)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.mentor_name}
+                    placeholder="Enter mentor's name (optional)"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
+          </div>
+
+          {/* Skills */}
+          <form.Field name="skills">
             {(field) => (
               <FormField
-                label="Upload Training Certificate/Proof"
-                htmlFor="proof_document_new"
+                label="Skills & Technologies"
+                error={getFieldError(field.state.meta.errors)}
+              >
+                <SkillsInput
+                  value={field.state.value}
+                  onChange={(skills) => field.handleChange(skills)}
+                  disabled={!FIELD_PERMISSIONS.skills}
+                />
+              </FormField>
+            )}
+          </form.Field>
+
+          {/* Project Images */}
+          <div className="divider">Project Screenshots (Optional)</div>
+
+          <form.Field name="snaps">
+            {(field) => (
+              <FormField
+                label="Upload Images"
+                htmlFor="snaps_new"
                 error={getFieldError(field.state.meta.errors)}
               >
                 <input
-                  id="proof_document_new"
+                  id="snaps_new"
                   type="file"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      field.handleChange(file);
-                    }
-                  }}
-                  onBlur={field.handleBlur}
-                  disabled={!FIELD_PERMISSIONS.proof_document}
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  multiple
+                  onChange={(e) => handleImagesChange(e.target.files)}
+                  disabled={!FIELD_PERMISSIONS.snaps}
+                  accept="image/jpeg,image/png,image/jpg,image/webp"
                   className="file-input file-input-bordered w-full"
                 />
                 <label className="label">
                   <span className="label-text-alt">
-                    Max file size: 10MB. Formats: PDF, JPG, PNG
+                    Max file size: 10MB per image. Formats: JPG, PNG, WebP
                   </span>
                 </label>
-                {field.state.value && (
-                  <div className="alert alert-info mt-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      className="stroke-current shrink-0 w-6 h-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      ></path>
-                    </svg>
-                    <span>Selected: {field.state.value.name}</span>
+                {previewUrls.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium">
+                      Selected images ({previewUrls.length}):
+                    </p>
+                    <ImagePreview
+                      images={previewUrls}
+                      onRemove={removeImage}
+                      disabled={!FIELD_PERMISSIONS.snaps}
+                    />
                   </div>
                 )}
               </FormField>
@@ -536,12 +528,14 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
                   {isSubmitting && (
                     <span className="loading loading-spinner"></span>
                   )}
-                  Add Training
+                  Create Project
                 </button>
                 <button
                   type="button"
                   onClick={() => {
+                    previewUrls.forEach((url) => URL.revokeObjectURL(url));
                     form.reset();
+                    setPreviewUrls([]);
                     setIsExpanded(false);
                   }}
                   disabled={isSubmitting}
@@ -558,48 +552,46 @@ function AddTrainingForm({ userId, onSuccess, onError }: AddTrainingFormProps) {
   );
 }
 
-// ==================== SINGLE TRAINING RECORD FORM ====================
-interface TrainingRecordFormProps {
-  record: TrainingItem;
+// ==================== SINGLE PROJECT FORM ====================
+interface ProjectFormProps {
+  record: ProjectItem;
   onSuccess?: () => void;
   onError?: (error: any) => void;
 }
 
-function TrainingRecordForm({
-  record,
-  onSuccess,
-  onError,
-}: TrainingRecordFormProps) {
+function ProjectForm({ record, onSuccess, onError }: ProjectFormProps) {
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: async (values: UpdateFormValues) => {
+    mutationFn: async (values: FormValues) => {
       console.log("=== SUBMITTING TO API ===");
       console.log("Values:", values);
 
       const formData = new FormData();
       if (values.title !== null) formData.append("title", values.title);
-      if (values.institution !== null)
-        formData.append("institution", values.institution);
-      if (values.training_type !== null)
-        formData.append("training_type", values.training_type);
-      if (values.start_date !== null)
-        formData.append("start_date", values.start_date);
-      if (values.end_date !== null) formData.append("end_date", values.end_date);
       if (values.description !== null)
         formData.append("description", values.description);
+      if (values.project_link !== null)
+        formData.append("project_link", values.project_link);
+      if (values.mentor_name !== null)
+        formData.append("mentor_name", values.mentor_name);
 
       if (values.skills.length > 0) {
         formData.append("skills", values.skills.join(","));
       }
 
-      if (values.proof_document) {
-        formData.append("proof_document", values.proof_document);
+      formData.append("replace_snaps", values.replace_snaps.toString());
+
+      if (values.snaps.length > 0) {
+        values.snaps.forEach((file) => {
+          formData.append("snaps", file);
+        });
       }
 
-      const response = await api.patch(`/trainings/${record.id}`, formData, {
+      const response = await api.patch(`/projects/${record.id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -612,8 +604,10 @@ function TrainingRecordForm({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["trainings", record.user_id],
+        queryKey: ["projects", record.user_id],
       });
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+      setPreviewUrls([]);
       setIsExpanded(false);
       onSuccess?.();
     },
@@ -623,14 +617,13 @@ function TrainingRecordForm({
   const form = useForm({
     defaultValues: {
       title: record.title,
-      institution: record.institution,
-      training_type: record.training_type,
-      start_date: record.start_date,
-      end_date: record.end_date,
-      skills: record.skills || [],
       description: record.description,
-      proof_document: null,
-    } as UpdateFormValues,
+      skills: record.skills || [],
+      project_link: record.project_link,
+      mentor_name: record.mentor_name,
+      snaps: [],
+      replace_snaps: false,
+    } as FormValues,
     onSubmit: async ({ value }) => {
       console.log("=== FORM SUBMIT ===");
       console.log("Current form values:", value);
@@ -642,40 +635,54 @@ function TrainingRecordForm({
   useEffect(() => {
     if (!form.state.isDirty) {
       form.setFieldValue("title", record.title);
-      form.setFieldValue("institution", record.institution);
-      form.setFieldValue("training_type", record.training_type);
-      form.setFieldValue("start_date", record.start_date);
-      form.setFieldValue("end_date", record.end_date);
-      form.setFieldValue("skills", record.skills || []);
       form.setFieldValue("description", record.description);
-      form.setFieldValue("proof_document", null);
+      form.setFieldValue("skills", record.skills || []);
+      form.setFieldValue("project_link", record.project_link);
+      form.setFieldValue("mentor_name", record.mentor_name);
+      form.setFieldValue("snaps", [] as any);
+      form.setFieldValue("replace_snaps", false);
     }
   }, [record, form]);
 
   const handleReset = () => {
+    previewUrls.forEach((url) => URL.revokeObjectURL(url));
     form.setFieldValue("title", record.title);
-    form.setFieldValue("institution", record.institution);
-    form.setFieldValue("training_type", record.training_type);
-    form.setFieldValue("start_date", record.start_date);
-    form.setFieldValue("end_date", record.end_date);
-    form.setFieldValue("skills", record.skills || []);
     form.setFieldValue("description", record.description);
-    form.setFieldValue("proof_document", null);
+    form.setFieldValue("skills", record.skills || []);
+    form.setFieldValue("project_link", record.project_link);
+    form.setFieldValue("mentor_name", record.mentor_name);
+    form.setFieldValue("snaps", [] as any);
+    form.setFieldValue("replace_snaps", false);
+    setPreviewUrls([]);
     setIsExpanded(false);
   };
 
-  // Calculate duration
-  const getDuration = () => {
-    if (!record.start_date || !record.end_date) return "Duration not set";
-    const start = new Date(record.start_date);
-    const end = new Date(record.end_date);
-    const diffMonths = Math.round(
-      (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30),
-    );
-    return diffMonths > 0
-      ? `${diffMonths} month${diffMonths > 1 ? "s" : ""}`
-      : "Less than a month";
+  const handleImagesChange = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files);
+    const currentSnaps = form.getFieldValue("snaps") || [];
+    form.setFieldValue("snaps", [...currentSnaps, ...newFiles] as any);
+
+    const newUrls = newFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls((prev) => [...prev, ...newUrls]);
   };
+
+  const removeNewImage = (index: number) => {
+    URL.revokeObjectURL(previewUrls[index]);
+    const currentSnaps = form.getFieldValue("snaps") || [];
+    form.setFieldValue(
+      "snaps",
+      currentSnaps.filter((_, i) => i !== index) as any,
+    );
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
 
   return (
     <div className="card bg-base-100 border border-base-300 shadow-sm">
@@ -686,19 +693,23 @@ function TrainingRecordForm({
       >
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <h4 className="font-semibold text-lg">{record.title}</h4>
-            <p className="text-sm opacity-70 mt-1">
-              {record.institution} • {getDuration()}
-            </p>
-            {record.proof_document_signed_url && (
+            <h4 className="font-semibold text-lg">
+              {record.title || "Untitled Project"}
+            </h4>
+            {record.description && (
+              <p className="text-sm opacity-70 mt-1 line-clamp-2">
+                {record.description}
+              </p>
+            )}
+            {record.project_link && (
               <Link
-                href={record.proof_document_signed_url}
+                href={`${record.project_link}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="link link-primary text-sm mt-1 inline-block"
                 onClick={(e) => e.stopPropagation()}
               >
-                View Certificate →
+                View Project →
               </Link>
             )}
           </div>
@@ -748,135 +759,23 @@ function TrainingRecordForm({
           }}
           className="card-body pt-0 space-y-6"
         >
-          {/* Title and Institution */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <form.Field name="title">
-              {(field) => (
-                <FormField
-                  label="Training Title"
-                  htmlFor={`title_${record.id}`}
-                  error={getFieldError(field.state.meta.errors)}
-                >
-                  <input
-                    id={`title_${record.id}`}
-                    type="text"
-                    value={field.state.value ?? ""}
-                    onChange={(e) =>
-                      field.handleChange(e.target.value || null)
-                    }
-                    onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.title}
-                    placeholder="e.g., Full Stack Web Development"
-                    className="input input-bordered w-full"
-                  />
-                </FormField>
-              )}
-            </form.Field>
-
-            <form.Field name="institution">
-              {(field) => (
-                <FormField
-                  label="Institution"
-                  htmlFor={`institution_${record.id}`}
-                  error={getFieldError(field.state.meta.errors)}
-                >
-                  <input
-                    id={`institution_${record.id}`}
-                    type="text"
-                    value={field.state.value ?? ""}
-                    onChange={(e) =>
-                      field.handleChange(e.target.value || null)
-                    }
-                    onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.institution}
-                    placeholder="e.g., Coursera, Udemy"
-                    className="input input-bordered w-full"
-                  />
-                </FormField>
-              )}
-            </form.Field>
-          </div>
-
-          {/* Training Type */}
-          <form.Field name="training_type">
+          {/* Title */}
+          <form.Field name="title">
             {(field) => (
               <FormField
-                label="Training Type"
-                htmlFor={`training_type_${record.id}`}
+                label="Project Title"
+                htmlFor={`title_${record.id}`}
                 error={getFieldError(field.state.meta.errors)}
               >
                 <input
-                  id={`training_type_${record.id}`}
+                  id={`title_${record.id}`}
                   type="text"
                   value={field.state.value ?? ""}
                   onChange={(e) => field.handleChange(e.target.value || null)}
                   onBlur={field.handleBlur}
-                  disabled={!FIELD_PERMISSIONS.training_type}
-                  placeholder="e.g., Online Course, Workshop, Bootcamp"
+                  disabled={!FIELD_PERMISSIONS.title}
+                  placeholder="e.g., E-commerce Website"
                   className="input input-bordered w-full"
-                />
-              </FormField>
-            )}
-          </form.Field>
-
-          {/* Start Date and End Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <form.Field name="start_date">
-              {(field) => (
-                <FormField
-                  label="Start Date"
-                  htmlFor={`start_date_${record.id}`}
-                  error={getFieldError(field.state.meta.errors)}
-                >
-                  <input
-                    id={`start_date_${record.id}`}
-                    type="date"
-                    value={field.state.value ?? ""}
-                    onChange={(e) =>
-                      field.handleChange(e.target.value || null)
-                    }
-                    onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.start_date}
-                    className="input input-bordered w-full"
-                  />
-                </FormField>
-              )}
-            </form.Field>
-
-            <form.Field name="end_date">
-              {(field) => (
-                <FormField
-                  label="End Date"
-                  htmlFor={`end_date_${record.id}`}
-                  error={getFieldError(field.state.meta.errors)}
-                >
-                  <input
-                    id={`end_date_${record.id}`}
-                    type="date"
-                    value={field.state.value ?? ""}
-                    onChange={(e) =>
-                      field.handleChange(e.target.value || null)
-                    }
-                    onBlur={field.handleBlur}
-                    disabled={!FIELD_PERMISSIONS.end_date}
-                    className="input input-bordered w-full"
-                  />
-                </FormField>
-              )}
-            </form.Field>
-          </div>
-
-          {/* Skills */}
-          <form.Field name="skills">
-            {(field) => (
-              <FormField
-                label="Skills Learned"
-                error={getFieldError(field.state.meta.errors)}
-              >
-                <SkillsInput
-                  value={field.state.value}
-                  onChange={(skills) => field.handleChange(skills)}
-                  disabled={!FIELD_PERMISSIONS.skills}
                 />
               </FormField>
             )}
@@ -896,7 +795,7 @@ function TrainingRecordForm({
                   onChange={(e) => field.handleChange(e.target.value || null)}
                   onBlur={field.handleBlur}
                   disabled={!FIELD_PERMISSIONS.description}
-                  placeholder="Describe the training content and what you learned"
+                  placeholder="Describe your project, its features, and technologies used"
                   rows={4}
                   className="textarea textarea-bordered w-full"
                 />
@@ -904,77 +803,137 @@ function TrainingRecordForm({
             )}
           </form.Field>
 
-          {/* Proof Document */}
-          <div className="divider">Proof Document</div>
-
-          {record.proof_document_signed_url && (
-            <div className="alert alert-info">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                className="stroke-current shrink-0 w-6 h-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
-              <div>
-                <div className="text-sm font-medium">
-                  Current training certificate uploaded
-                </div>
-                <Link
-                  href={record.proof_document_signed_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="link link-primary text-sm"
+          {/* Project Link and Mentor Name */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form.Field name="project_link">
+              {(field) => (
+                <FormField
+                  label="Project Link"
+                  htmlFor={`project_link_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
                 >
-                  View Document
-                </Link>
-              </div>
+                  <input
+                    id={`project_link_${record.id}`}
+                    type="url"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(e.target.value || null)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.project_link}
+                    placeholder="https://github.com/username/project"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
+
+            <form.Field name="mentor_name">
+              {(field) => (
+                <FormField
+                  label="Mentor Name"
+                  htmlFor={`mentor_name_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id={`mentor_name_${record.id}`}
+                    type="text"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(e.target.value || null)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.mentor_name}
+                    placeholder="Enter mentor's name (optional)"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
+          </div>
+
+          {/* Skills */}
+          <form.Field name="skills">
+            {(field) => (
+              <FormField
+                label="Skills & Technologies"
+                error={getFieldError(field.state.meta.errors)}
+              >
+                <SkillsInput
+                  value={field.state.value}
+                  onChange={(skills) => field.handleChange(skills)}
+                  disabled={!FIELD_PERMISSIONS.skills}
+                />
+              </FormField>
+            )}
+          </form.Field>
+
+          {/* Project Images */}
+          <div className="divider">Project Screenshots</div>
+
+          {/* Existing images */}
+          {record.snaps_signed_urls && record.snaps_signed_urls.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Current images:</p>
+              <ImagePreview images={record.snaps_signed_urls} />
             </div>
           )}
 
-          <form.Field name="proof_document">
+          {/* Replace snaps toggle */}
+          <form.Field name="replace_snaps">
+            {(field) => (
+              <div className="form-control">
+                <label className="label cursor-pointer justify-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.checked)}
+                    disabled={!FIELD_PERMISSIONS.replace_snaps}
+                    className="checkbox checkbox-primary"
+                  />
+                  <span className="label-text">
+                    Replace existing images (instead of adding to them)
+                  </span>
+                </label>
+              </div>
+            )}
+          </form.Field>
+
+          <form.Field name="snaps">
             {(field) => (
               <FormField
-                label="Upload New Certificate/Proof"
-                htmlFor={`proof_document_${record.id}`}
+                label={
+                  form.getFieldValue("replace_snaps")
+                    ? "Upload New Images (Replace All)"
+                    : "Upload Additional Images"
+                }
+                htmlFor={`snaps_${record.id}`}
                 error={getFieldError(field.state.meta.errors)}
               >
                 <input
-                  id={`proof_document_${record.id}`}
+                  id={`snaps_${record.id}`}
                   type="file"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      field.handleChange(file);
-                    }
-                  }}
-                  onBlur={field.handleBlur}
-                  disabled={!FIELD_PERMISSIONS.proof_document}
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  multiple
+                  onChange={(e) => handleImagesChange(e.target.files)}
+                  disabled={!FIELD_PERMISSIONS.snaps}
+                  accept="image/jpeg,image/png,image/jpg,image/webp"
                   className="file-input file-input-bordered w-full"
                 />
-                {field.state.value && (
-                  <div className="alert alert-success mt-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="stroke-current shrink-0 h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <span>Selected: {field.state.value.name}</span>
+                <label className="label">
+                  <span className="label-text-alt">
+                    Max file size: 10MB per image. Formats: JPG, PNG, WebP
+                  </span>
+                </label>
+                {previewUrls.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium">
+                      New images to upload ({previewUrls.length}):
+                    </p>
+                    <ImagePreview
+                      images={previewUrls}
+                      onRemove={removeNewImage}
+                      disabled={!FIELD_PERMISSIONS.snaps}
+                    />
                   </div>
                 )}
               </FormField>
@@ -1015,26 +974,26 @@ function TrainingRecordForm({
 }
 
 // ==================== MAIN COMPONENT ====================
-interface TrainingsFormProps {
+interface ProjectsFormProps {
   userId: number;
   onSuccess?: () => void;
   onError?: (error: any) => void;
 }
 
-export default function TrainingsForm({
+export default function ProjectsForm({
   userId,
   onSuccess,
   onError,
-}: TrainingsFormProps) {
+}: ProjectsFormProps) {
   const { data, isLoading, isError, error } = useQuery({
     enabled: !!userId,
     queryFn: async () => {
-      const response = await api.get<GetTrainingsResponse>(
-        `/trainings/user/${userId}`,
+      const response = await api.get<GetProjectsResponse>(
+        `/projects/user/${userId}`,
       );
       return response.data;
     },
-    queryKey: ["trainings", userId],
+    queryKey: ["projects", userId],
   });
 
   if (isLoading) {
@@ -1061,23 +1020,23 @@ export default function TrainingsForm({
             d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <span>Error loading trainings: {(error as Error)?.message}</span>
+        <span>Error loading projects: {(error as Error)?.message}</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h2 className="text-2xl font-bold mb-6">Trainings</h2>
+      <h2 className="text-2xl font-bold mb-6">Projects</h2>
 
-      {/* Add New Training Form */}
-      <AddTrainingForm userId={userId} onSuccess={onSuccess} onError={onError} />
+      {/* Add New Project Form */}
+      <AddProjectForm userId={userId} onSuccess={onSuccess} onError={onError} />
 
-      {/* Existing Training Records */}
+      {/* Existing Project Records */}
       <div className="space-y-4">
         {data && data.length > 0 ? (
           data.map((record) => (
-            <TrainingRecordForm
+            <ProjectForm
               key={record.id}
               record={record}
               onSuccess={onSuccess}
@@ -1086,7 +1045,7 @@ export default function TrainingsForm({
           ))
         ) : (
           <div className="p-8 text-center opacity-70 bg-base-200 rounded-lg border-2 border-dashed border-base-300">
-            No trainings found. Add your first training above.
+            No projects found. Add your first project above.
           </div>
         )}
       </div>

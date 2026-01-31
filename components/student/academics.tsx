@@ -1,962 +1,1079 @@
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { api } from "@/lib/api";
+import { getFieldError } from "@/lib/form-helper";
+import Link from "next/link";
 
 // ==================== SCHEMAS ====================
 const academicsItemSchema = z.object({
-	academic_year: z.number().int(),
-	closed_backlogs: z.number().int(),
-	id: z.number().int(),
-	live_backlogs: z.number().int(),
-	provisional_result_upload_link: z.string(),
-	provisional_result_upload_link_signed_url: z.string(),
-	result_in_sgpa: z.number(),
-	semester: z.number().int(),
-	uploaded_at: z.string().datetime(),
-	user_id: z.number().int(),
-	usn: z.string()
+  academic_year: z.number().int(),
+  closed_backlogs: z.number().int(),
+  id: z.number().int(),
+  live_backlogs: z.number().int(),
+  provisional_result_upload_link: z.string(),
+  provisional_result_upload_link_signed_url: z.string(),
+  result_in_sgpa: z.number(),
+  semester: z.number().int(),
+  uploaded_at: z.string().datetime(),
+  user_id: z.number().int(),
+  usn: z.string(),
 });
 
 const getAcademicsResponseSchema = z.array(academicsItemSchema);
 
-const createAcademicsRequestSchema = z.object({
-	academic_year: z.number().int(),
-	closed_backlogs: z.number().int().nullable(),
-	live_backlogs: z.number().int().nullable(),
-	provisional_result_upload_link: z.string().nullable(),
-	result_in_sgpa: z.number(),
-	semester: z.number().int(),
-	user_id: z.number().int()
-});
-
-const updateAcademicsRequestSchema = z.object({
-	academic_year: z.number().int().nullable(),
-	closed_backlogs: z.number().int().nullable(),
-	live_backlogs: z.number().int().nullable(),
-	provisional_result_upload_link: z.string().nullable(),
-	result_in_sgpa: z.number().nullable(),
-	semester: z.number().int().nullable()
-});
-
 type AcademicsItem = z.infer<typeof academicsItemSchema>;
 type GetAcademicsResponse = z.infer<typeof getAcademicsResponseSchema>;
-type CreateAcademicsRequest = z.infer<typeof createAcademicsRequestSchema>;
-type UpdateAcademicsRequest = z.infer<typeof updateAcademicsRequestSchema>;
 
 // Form values type for create
 type CreateFormValues = {
-	academic_year: number;
-	semester: number;
-	result_in_sgpa: number;
-	closed_backlogs: number | null;
-	live_backlogs: number | null;
-	provisional_result_upload_link: File | null;
+  academic_year: number;
+  semester: number;
+  result_in_sgpa: number;
+  closed_backlogs: number | null;
+  live_backlogs: number | null;
+  provisional_result_upload_link: File | null;
 };
 
 // Form values type for update
 type UpdateFormValues = {
-	academic_year: number | null;
-	semester: number | null;
-	result_in_sgpa: number | null;
-	closed_backlogs: number | null;
-	live_backlogs: number | null;
-	provisional_result_upload_link: File | null;
+  academic_year: number | null;
+  semester: number | null;
+  result_in_sgpa: number | null;
+  closed_backlogs: number | null;
+  live_backlogs: number | null;
+  provisional_result_upload_link: File | null;
 };
 
 // ==================== FIELD PERMISSIONS CONFIG ====================
 const FIELD_PERMISSIONS = {
-	academic_year: true,
-	closed_backlogs: true,
-	live_backlogs: true,
-	provisional_result_upload_link: true,
-	result_in_sgpa: true,
-	semester: true
+  academic_year: true,
+  closed_backlogs: true,
+  live_backlogs: true,
+  provisional_result_upload_link: true,
+  result_in_sgpa: true,
+  semester: true,
 } as const;
 
 // ==================== HELPER COMPONENTS ====================
 interface FormFieldProps {
-	label: string;
-	htmlFor?: string;
-	error?: string;
-	required?: boolean;
-	children: React.ReactNode;
+  label: string;
+  htmlFor?: string;
+  error?: string;
+  required?: boolean;
+  children: React.ReactNode;
 }
 
 function FormField({
-	label,
-	htmlFor,
-	error,
-	required,
-	children
+  label,
+  htmlFor,
+  error,
+  required,
+  children,
 }: FormFieldProps) {
-	return (
-		<div>
-			<label
-				htmlFor={htmlFor}
-				className="block text-sm font-medium text-gray-700 mb-1"
-			>
-				{label}
-				{required && <span className="text-red-500 ml-1">*</span>}
-			</label>
-			{children}
-			{error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-		</div>
-	);
+  return (
+    <div className="form-control w-full">
+      <label htmlFor={htmlFor} className="label">
+        <span className="label-text font-medium">
+          {label}
+          {required && <span className="text-error ml-1">*</span>}
+        </span>
+      </label>
+      {children}
+      {error && (
+        <label className="label pt-1">
+          <span className="label-text-alt text-error">{error}</span>
+        </label>
+      )}
+    </div>
+  );
 }
 
 // ==================== ADD NEW ACADEMICS RECORD FORM ====================
 interface AddAcademicsFormProps {
-	userId: number;
-	onSuccess?: () => void;
-	onError?: (error: any) => void;
+  userId: number;
+  onSuccess?: () => void;
+  onError?: (error: any) => void;
 }
 
 function AddAcademicsForm({
-	userId,
-	onSuccess,
-	onError
+  userId,
+  onSuccess,
+  onError,
 }: AddAcademicsFormProps) {
-	const queryClient = useQueryClient();
-	const [isExpanded, setIsExpanded] = useState(false);
+  const queryClient = useQueryClient();
+  const [isExpanded, setIsExpanded] = useState(false);
 
-	// Initial empty form values
-	const initialFormValues: CreateFormValues = {
-		academic_year: new Date().getFullYear(),
-		closed_backlogs: null,
-		live_backlogs: null,
-		provisional_result_upload_link: null,
-		result_in_sgpa: 0,
-		semester: 1
-	};
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: async (values: CreateFormValues) => {
+      console.log("=== CREATING NEW SEMESTER ACADEMICS ===");
+      console.log("Values:", values);
 
-	const [formValues, setFormValues] =
-		useState<CreateFormValues>(initialFormValues);
-	const [errors, setErrors] = useState<
-		Partial<Record<keyof CreateFormValues, string>>
-	>({});
+      const formData = new FormData();
+      formData.append("user_id", userId.toString());
+      formData.append("academic_year", values.academic_year.toString());
+      formData.append("semester", values.semester.toString());
+      formData.append("result_in_sgpa", values.result_in_sgpa.toString());
 
-	// Create mutation - using FormData
-	const createMutation = useMutation({
-		mutationFn: async (values: CreateFormValues) => {
-			console.log("=== CREATING NEW SEMESTER ACADEMICS ===");
-			console.log("Values:", values);
+      if (values.closed_backlogs !== null) {
+        formData.append("closed_backlogs", values.closed_backlogs.toString());
+      }
+      if (values.live_backlogs !== null) {
+        formData.append("live_backlogs", values.live_backlogs.toString());
+      }
 
-			// Create FormData
-			const formData = new FormData();
+      if (values.provisional_result_upload_link) {
+        formData.append(
+          "provisional_result_upload_link",
+          values.provisional_result_upload_link,
+        );
+      }
 
-			formData.append("user_id", userId.toString());
-			formData.append("academic_year", values.academic_year.toString());
-			formData.append("semester", values.semester.toString());
-			formData.append("result_in_sgpa", values.result_in_sgpa.toString());
+      const response = await api.post(`/semester-academics/user`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    },
+    onError: (error: any) => {
+      console.error("Create error:", error);
+      onError?.(error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["semester-academics", userId],
+      });
+      form.reset();
+      setIsExpanded(false);
+      onSuccess?.();
+    },
+  });
 
-			if (values.closed_backlogs !== null) {
-				formData.append("closed_backlogs", values.closed_backlogs.toString());
-			}
-			if (values.live_backlogs !== null) {
-				formData.append("live_backlogs", values.live_backlogs.toString());
-			}
+  // TanStack Form setup
+  const form = useForm({
+    defaultValues: {
+      academic_year: new Date().getFullYear(),
+      semester: 1,
+      result_in_sgpa: 0,
+      closed_backlogs: null,
+      live_backlogs: null,
+      provisional_result_upload_link: null,
+    } as CreateFormValues,
+    onSubmit: async ({ value }) => {
+      console.log("=== FORM SUBMIT ===");
+      console.log("Current form values:", value);
+      await createMutation.mutateAsync(value);
+    },
+  });
 
-			// Handle file separately
-			if (values.provisional_result_upload_link) {
-				formData.append(
-					"provisional_result_upload_link",
-					values.provisional_result_upload_link
-				);
-			}
+  return (
+    <div className="border-2 border-dashed border-primary rounded-lg overflow-hidden bg-primary/5">
+      {/* Header */}
+      <div
+        className="bg-primary/10 px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-primary/20 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex-1">
+          <h4 className="font-semibold text-lg flex items-center gap-2">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Add Semester Academics
+          </h4>
+          <p className="text-sm opacity-70 mt-1">
+            Click to add a new semester academic record
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm btn-circle"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+        >
+          <svg
+            className={`w-6 h-6 transition-transform ${isExpanded ? "rotate-180" : ""
+              }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+      </div>
 
-			// Log FormData contents
-			console.log("FormData contents:");
-			for (const [key, value] of formData.entries()) {
-				console.log(`  ${key}:`, value);
-			}
+      {/* Expandable Form */}
+      {isExpanded && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          className="p-6 space-y-6 bg-base-100"
+        >
+          {/* Academic Year and Semester */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form.Field
+              name="academic_year"
+              validators={{
+                onBlur: z
+                  .number()
+                  .int()
+                  .min(2000, "Academic year must be at least 2000")
+                  .max(2100, "Academic year must be at most 2100"),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Academic Year"
+                  htmlFor="academic_year_new"
+                  required
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="academic_year_new"
+                    type="number"
+                    value={field.state.value}
+                    onChange={(e) =>
+                      field.handleChange(parseInt(e.target.value, 10) || 0)
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.academic_year}
+                    placeholder="e.g., 2024"
+                    min="2000"
+                    max="2100"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
 
-			const response = await api.post(`/semester-academics/user`, formData, {
-				headers: {
-					"Content-Type": "multipart/form-data"
-				}
-			});
-			console.log("Response:", response.data);
-			return response.data;
-		},
-		onError: (error: any) => {
-			console.error("Create error:", error);
-			onError?.(error);
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["semester-academics", userId]
-			});
-			setFormValues(initialFormValues);
-			setErrors({});
-			setIsExpanded(false);
-			onSuccess?.();
-		}
-	});
+            <form.Field
+              name="semester"
+              validators={{
+                onBlur: z
+                  .number()
+                  .int()
+                  .min(1, "Semester must be at least 1")
+                  .max(8, "Semester must be at most 8"),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Semester"
+                  htmlFor="semester_new"
+                  required
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <select
+                    id="semester_new"
+                    value={field.state.value}
+                    onChange={(e) =>
+                      field.handleChange(parseInt(e.target.value, 10))
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.semester}
+                    className="select select-bordered w-full"
+                  >
+                    <option value={1}>Semester 1</option>
+                    <option value={2}>Semester 2</option>
+                    <option value={3}>Semester 3</option>
+                    <option value={4}>Semester 4</option>
+                    <option value={5}>Semester 5</option>
+                    <option value={6}>Semester 6</option>
+                    <option value={7}>Semester 7</option>
+                    <option value={8}>Semester 8</option>
+                  </select>
+                </FormField>
+              )}
+            </form.Field>
+          </div>
 
-	const validateForm = (): boolean => {
-		const newErrors: Partial<Record<keyof CreateFormValues, string>> = {};
+          {/* SGPA */}
+          <form.Field
+            name="result_in_sgpa"
+            validators={{
+              onBlur: z
+                .number()
+                .min(0, "SGPA must be at least 0")
+                .max(10, "SGPA must be at most 10"),
+            }}
+          >
+            {(field) => (
+              <FormField
+                label="Result in SGPA"
+                htmlFor="result_in_sgpa_new"
+                required
+                error={getFieldError(field.state.meta.errors)}
+              >
+                <input
+                  id="result_in_sgpa_new"
+                  type="number"
+                  step="0.01"
+                  value={field.state.value}
+                  onChange={(e) =>
+                    field.handleChange(parseFloat(e.target.value) || 0)
+                  }
+                  onBlur={field.handleBlur}
+                  disabled={!FIELD_PERMISSIONS.result_in_sgpa}
+                  placeholder="e.g., 8.5"
+                  min="0"
+                  max="10"
+                  className="input input-bordered w-full"
+                />
+              </FormField>
+            )}
+          </form.Field>
 
-		if (formValues.academic_year < 2000 || formValues.academic_year > 2100) {
-			newErrors.academic_year = "Academic year must be between 2000 and 2100";
-		}
-		if (formValues.semester < 1 || formValues.semester > 8) {
-			newErrors.semester = "Semester must be between 1 and 8";
-		}
-		if (formValues.result_in_sgpa < 0 || formValues.result_in_sgpa > 10) {
-			newErrors.result_in_sgpa = "SGPA must be between 0 and 10";
-		}
-		if (
-			formValues.closed_backlogs !== null &&
-			(formValues.closed_backlogs < 0 || formValues.closed_backlogs > 50)
-		) {
-			newErrors.closed_backlogs = "Closed backlogs must be between 0 and 50";
-		}
-		if (
-			formValues.live_backlogs !== null &&
-			(formValues.live_backlogs < 0 || formValues.live_backlogs > 50)
-		) {
-			newErrors.live_backlogs = "Live backlogs must be between 0 and 50";
-		}
+          {/* Backlogs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form.Field
+              name="closed_backlogs"
+              validators={{
+                onBlur: z
+                  .number()
+                  .int()
+                  .min(0, "Closed backlogs must be at least 0")
+                  .max(50, "Closed backlogs must be at most 50")
+                  .nullable(),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Closed Backlogs"
+                  htmlFor="closed_backlogs_new"
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="closed_backlogs_new"
+                    type="number"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value === ""
+                          ? null
+                          : parseInt(e.target.value, 10),
+                      )
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.closed_backlogs}
+                    placeholder="Enter number of closed backlogs"
+                    min="0"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
 
-		setErrors(newErrors);
-		return Object.keys(newErrors).length === 0;
-	};
+            <form.Field
+              name="live_backlogs"
+              validators={{
+                onBlur: z
+                  .number()
+                  .int()
+                  .min(0, "Live backlogs must be at least 0")
+                  .max(50, "Live backlogs must be at most 50")
+                  .nullable(),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Live Backlogs"
+                  htmlFor="live_backlogs_new"
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id="live_backlogs_new"
+                    type="number"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value === ""
+                          ? null
+                          : parseInt(e.target.value, 10),
+                      )
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.live_backlogs}
+                    placeholder="Enter number of live backlogs"
+                    min="0"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
+          </div>
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		console.log("=== FORM SUBMIT ===");
-		console.log("Current form values:", formValues);
+          {/* Provisional Result Upload */}
+          <div className="divider">Provisional Result Document</div>
 
-		if (!validateForm()) {
-			return;
-		}
+          <form.Field name="provisional_result_upload_link">
+            {(field) => (
+              <FormField
+                label="Upload Provisional Result"
+                htmlFor="provisional_result_new"
+                error={getFieldError(field.state.meta.errors)}
+              >
+                <input
+                  id="provisional_result_new"
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      field.handleChange(file);
+                    }
+                  }}
+                  onBlur={field.handleBlur}
+                  disabled={!FIELD_PERMISSIONS.provisional_result_upload_link}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="file-input file-input-bordered w-full"
+                />
+                <label className="label">
+                  <span className="label-text-alt">
+                    Max file size: 10MB. Formats: PDF, JPG, PNG
+                  </span>
+                </label>
+                {field.state.value && (
+                  <div className="alert alert-info mt-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      className="stroke-current shrink-0 w-6 h-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      ></path>
+                    </svg>
+                    <span>Selected: {field.state.value.name}</span>
+                  </div>
+                )}
+              </FormField>
+            )}
+          </form.Field>
 
-		await createMutation.mutateAsync(formValues);
-	};
-
-	const handleFieldChange = <K extends keyof CreateFormValues>(
-		field: K,
-		value: CreateFormValues[K]
-	) => {
-		console.log(`Field ${field} changed to:`, value);
-		setFormValues((prev) => ({ ...prev, [field]: value }));
-		// Clear error for this field when user starts typing
-		if (errors[field]) {
-			setErrors((prev) => ({ ...prev, [field]: undefined }));
-		}
-	};
-
-	return (
-		<div className="border-2 border-dashed border-blue-300 rounded-lg overflow-hidden bg-blue-50/30">
-			{/* Header */}
-			<div
-				className="bg-blue-50 px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-blue-100"
-				onClick={() => setIsExpanded(!isExpanded)}
-			>
-				<div className="flex-1">
-					<h4 className="font-semibold text-lg text-blue-900 flex items-center gap-2">
-						<svg
-							className="w-5 h-5"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M12 4v16m8-8H4"
-							/>
-						</svg>
-						Add Semester Academics
-					</h4>
-					<p className="text-sm text-blue-700 mt-1">
-						Click to add a new semester academic record
-					</p>
-				</div>
-				<button
-					type="button"
-					className="text-blue-600 hover:text-blue-800"
-					onClick={(e) => {
-						e.stopPropagation();
-						setIsExpanded(!isExpanded);
-					}}
-				>
-					<svg
-						className={`w-6 h-6 transition-transform ${
-							isExpanded ? "rotate-180" : ""
-						}`}
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M19 9l-7 7-7-7"
-						/>
-					</svg>
-				</button>
-			</div>
-
-			{/* Expandable Form */}
-			{isExpanded && (
-				<form onSubmit={handleSubmit} className="p-6 space-y-4 bg-white">
-					{/* Academic Year and Semester */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<FormField
-							label="Academic Year"
-							htmlFor="academic_year_new"
-							required
-							error={errors.academic_year}
-						>
-							<input
-								id="academic_year_new"
-								type="number"
-								value={formValues.academic_year}
-								onChange={(e) =>
-									handleFieldChange(
-										"academic_year",
-										parseInt(e.target.value, 10)
-									)
-								}
-								disabled={!FIELD_PERMISSIONS.academic_year}
-								placeholder="e.g., 2024"
-								min="2000"
-								max="2100"
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-							/>
-						</FormField>
-
-						<FormField
-							label="Semester"
-							htmlFor="semester_new"
-							required
-							error={errors.semester}
-						>
-							<select
-								id="semester_new"
-								value={formValues.semester}
-								onChange={(e) =>
-									handleFieldChange("semester", parseInt(e.target.value, 10))
-								}
-								disabled={!FIELD_PERMISSIONS.semester}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-							>
-								<option value={1}>Semester 1</option>
-								<option value={2}>Semester 2</option>
-								<option value={3}>Semester 3</option>
-								<option value={4}>Semester 4</option>
-								<option value={5}>Semester 5</option>
-								<option value={6}>Semester 6</option>
-								<option value={7}>Semester 7</option>
-								<option value={8}>Semester 8</option>
-							</select>
-						</FormField>
-					</div>
-
-					{/* SGPA */}
-					<FormField
-						label="Result in SGPA"
-						htmlFor="result_in_sgpa_new"
-						required
-						error={errors.result_in_sgpa}
-					>
-						<input
-							id="result_in_sgpa_new"
-							type="number"
-							step="0.01"
-							value={formValues.result_in_sgpa}
-							onChange={(e) =>
-								handleFieldChange("result_in_sgpa", parseFloat(e.target.value))
-							}
-							disabled={!FIELD_PERMISSIONS.result_in_sgpa}
-							placeholder="e.g., 8.5"
-							min="0"
-							max="10"
-							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-						/>
-					</FormField>
-
-					{/* Backlogs */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<FormField
-							label="Closed Backlogs"
-							htmlFor="closed_backlogs_new"
-							error={errors.closed_backlogs}
-						>
-							<input
-								id="closed_backlogs_new"
-								type="number"
-								value={formValues.closed_backlogs ?? ""}
-								onChange={(e) =>
-									handleFieldChange(
-										"closed_backlogs",
-										e.target.value === "" ? null : parseInt(e.target.value, 10)
-									)
-								}
-								disabled={!FIELD_PERMISSIONS.closed_backlogs}
-								placeholder="Enter number of closed backlogs"
-								min="0"
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-							/>
-						</FormField>
-
-						<FormField
-							label="Live Backlogs"
-							htmlFor="live_backlogs_new"
-							error={errors.live_backlogs}
-						>
-							<input
-								id="live_backlogs_new"
-								type="number"
-								value={formValues.live_backlogs ?? ""}
-								onChange={(e) =>
-									handleFieldChange(
-										"live_backlogs",
-										e.target.value === "" ? null : parseInt(e.target.value, 10)
-									)
-								}
-								disabled={!FIELD_PERMISSIONS.live_backlogs}
-								placeholder="Enter number of live backlogs"
-								min="0"
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-							/>
-						</FormField>
-					</div>
-
-					{/* Provisional Result Upload */}
-					<div className="pt-4 border-t border-gray-200">
-						<h5 className="font-medium text-gray-900 mb-4">
-							Provisional Result Document
-						</h5>
-
-						<FormField
-							label="Upload Provisional Result"
-							htmlFor="provisional_result_new"
-						>
-							<input
-								id="provisional_result_new"
-								type="file"
-								onChange={(e) => {
-									const file = e.target.files?.[0];
-									if (file) {
-										handleFieldChange("provisional_result_upload_link", file);
-									}
-								}}
-								disabled={!FIELD_PERMISSIONS.provisional_result_upload_link}
-								accept=".pdf,.jpg,.jpeg,.png"
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-							/>
-							<p className="text-xs text-gray-500 mt-1">
-								Max file size: 10MB. Formats: PDF, JPG, PNG
-							</p>
-							{formValues.provisional_result_upload_link && (
-								<p className="text-sm text-gray-600 mt-1">
-									Selected: {formValues.provisional_result_upload_link.name}
-								</p>
-							)}
-						</FormField>
-					</div>
-
-					{/* Action Buttons */}
-					<div className="flex gap-4 pt-4 border-t border-gray-200">
-						<button
-							type="submit"
-							disabled={createMutation.isPending}
-							className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
-						>
-							{createMutation.isPending && (
-								<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-							)}
-							Add Academic Record
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								setFormValues(initialFormValues);
-								setErrors({});
-								setIsExpanded(false);
-							}}
-							disabled={createMutation.isPending}
-							className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
-						>
-							Cancel
-						</button>
-					</div>
-				</form>
-			)}
-		</div>
-	);
+          {/* Action Buttons */}
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="submit"
+                  disabled={!canSubmit || isSubmitting}
+                  className="btn btn-primary"
+                >
+                  {isSubmitting && (
+                    <span className="loading loading-spinner"></span>
+                  )}
+                  Add Academic Record
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    form.reset();
+                    setIsExpanded(false);
+                  }}
+                  disabled={isSubmitting}
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </form.Subscribe>
+        </form>
+      )}
+    </div>
+  );
 }
 
 // ==================== SINGLE ACADEMICS RECORD FORM ====================
 interface AcademicsRecordFormProps {
-	record: AcademicsItem;
-	onSuccess?: () => void;
-	onError?: (error: any) => void;
+  record: AcademicsItem;
+  onSuccess?: () => void;
+  onError?: (error: any) => void;
 }
 
 function AcademicsRecordForm({
-	record,
-	onSuccess,
-	onError
+  record,
+  onSuccess,
+  onError,
 }: AcademicsRecordFormProps) {
-	const queryClient = useQueryClient();
-	const [isExpanded, setIsExpanded] = useState(false);
+  const queryClient = useQueryClient();
+  const [isExpanded, setIsExpanded] = useState(false);
 
-	// Update mutation - using FormData
-	const updateMutation = useMutation({
-		mutationFn: async (values: UpdateFormValues) => {
-			console.log("=== SUBMITTING TO API ===");
-			console.log("Values:", values);
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async (values: UpdateFormValues) => {
+      console.log("=== SUBMITTING TO API ===");
+      console.log("Values:", values);
 
-			// Create FormData
-			const formData = new FormData();
+      const formData = new FormData();
+      if (values.academic_year !== null)
+        formData.append("academic_year", values.academic_year.toString());
+      if (values.semester !== null)
+        formData.append("semester", values.semester.toString());
+      if (values.result_in_sgpa !== null)
+        formData.append("result_in_sgpa", values.result_in_sgpa.toString());
+      if (values.closed_backlogs !== null)
+        formData.append("closed_backlogs", values.closed_backlogs.toString());
+      if (values.live_backlogs !== null)
+        formData.append("live_backlogs", values.live_backlogs.toString());
 
-			if (values.academic_year !== null)
-				formData.append("academic_year", values.academic_year.toString());
-			if (values.semester !== null)
-				formData.append("semester", values.semester.toString());
-			if (values.result_in_sgpa !== null)
-				formData.append("result_in_sgpa", values.result_in_sgpa.toString());
-			if (values.closed_backlogs !== null)
-				formData.append("closed_backlogs", values.closed_backlogs.toString());
-			if (values.live_backlogs !== null)
-				formData.append("live_backlogs", values.live_backlogs.toString());
+      if (values.provisional_result_upload_link) {
+        formData.append(
+          "provisional_result_upload_link",
+          values.provisional_result_upload_link,
+        );
+      }
 
-			// Handle file separately
-			if (values.provisional_result_upload_link) {
-				formData.append(
-					"provisional_result_upload_link",
-					values.provisional_result_upload_link
-				);
-			}
+      const response = await api.patch(
+        `/semester-academics/${record.id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+      return response.data;
+    },
+    onError: (error: any) => {
+      console.error("Update error:", error);
+      onError?.(error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["semester-academics", record.user_id],
+      });
+      setIsExpanded(false);
+      onSuccess?.();
+    },
+  });
 
-			// Log FormData contents
-			console.log("FormData contents:");
-			for (const [key, value] of formData.entries()) {
-				console.log(`  ${key}:`, value);
-			}
+  // TanStack Form setup
+  const form = useForm({
+    defaultValues: {
+      academic_year: record.academic_year,
+      semester: record.semester,
+      result_in_sgpa: record.result_in_sgpa,
+      closed_backlogs: record.closed_backlogs,
+      live_backlogs: record.live_backlogs,
+      provisional_result_upload_link: null,
+    } as UpdateFormValues,
+    onSubmit: async ({ value }) => {
+      console.log("=== FORM SUBMIT ===");
+      console.log("Current form values:", value);
+      await updateMutation.mutateAsync(value);
+    },
+  });
 
-			const response = await api.patch(
-				`/semester-academics/${record.id}`,
-				formData,
-				{
-					headers: {
-						"Content-Type": "multipart/form-data"
-					}
-				}
-			);
-			console.log("Response:", response.data);
-			return response.data;
-		},
-		onError: (error: any) => {
-			console.error("Update error:", error);
-			onError?.(error);
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["semester-academics", record.user_id]
-			});
-			setIsExpanded(false);
-			onSuccess?.();
-		}
-	});
+  // Sync form values with record when it changes
+  useEffect(() => {
+    if (!form.state.isDirty) {
+      form.setFieldValue("academic_year", record.academic_year);
+      form.setFieldValue("semester", record.semester);
+      form.setFieldValue("result_in_sgpa", record.result_in_sgpa);
+      form.setFieldValue("closed_backlogs", record.closed_backlogs);
+      form.setFieldValue("live_backlogs", record.live_backlogs);
+      form.setFieldValue("provisional_result_upload_link", null);
+    }
+  }, [record, form]);
 
-	// Form state
-	const [formValues, setFormValues] = useState<UpdateFormValues>({
-		academic_year: record.academic_year,
-		closed_backlogs: record.closed_backlogs,
-		live_backlogs: record.live_backlogs,
-		provisional_result_upload_link: null,
-		result_in_sgpa: record.result_in_sgpa,
-		semester: record.semester
-	});
+  const handleReset = () => {
+    form.setFieldValue("academic_year", record.academic_year);
+    form.setFieldValue("semester", record.semester);
+    form.setFieldValue("result_in_sgpa", record.result_in_sgpa);
+    form.setFieldValue("closed_backlogs", record.closed_backlogs);
+    form.setFieldValue("live_backlogs", record.live_backlogs);
+    form.setFieldValue("provisional_result_upload_link", null);
+    setIsExpanded(false);
+  };
 
-	// Sync form values with record when it changes
-	useEffect(() => {
-		setFormValues({
-			academic_year: record.academic_year,
-			closed_backlogs: record.closed_backlogs,
-			live_backlogs: record.live_backlogs,
-			provisional_result_upload_link: null,
-			result_in_sgpa: record.result_in_sgpa,
-			semester: record.semester
-		});
-	}, [record]);
+  return (
+    <div className="card bg-base-100 border border-base-300 shadow-sm">
+      {/* Header */}
+      <div
+        className="card-body cursor-pointer hover:bg-base-200 transition-colors p-6"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <h4 className="font-semibold text-lg">
+              Academic Year {record.academic_year} - Semester {record.semester}
+            </h4>
+            <p className="text-sm opacity-70 mt-1">
+              SGPA: {record.result_in_sgpa} •{" "}
+              {record.live_backlogs > 0
+                ? `${record.live_backlogs} Live Backlog${record.live_backlogs > 1 ? "s" : ""}`
+                : "No Backlogs"}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-circle"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+          >
+            <svg
+              className={`w-6 h-6 transition-transform ${isExpanded ? "rotate-180" : ""
+                }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		console.log("=== FORM SUBMIT ===");
-		console.log("Current form values:", formValues);
-		await updateMutation.mutateAsync(formValues);
-	};
+      {/* Expandable Form */}
+      {isExpanded && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          className="card-body pt-0 space-y-6"
+        >
 
-	const handleFieldChange = <K extends keyof UpdateFormValues>(
-		field: K,
-		value: UpdateFormValues[K]
-	) => {
-		console.log(`Field ${field} changed to:`, value);
-		setFormValues((prev) => ({ ...prev, [field]: value }));
-	};
+          {/* Academic Year and Semester */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form.Field
+              name="academic_year"
+              validators={{
+                onBlur: z
+                  .number()
+                  .int()
+                  .min(2000, "Academic year must be at least 2000")
+                  .max(2100, "Academic year must be at most 2100")
+                  .nullable(),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Academic Year"
+                  htmlFor={`academic_year_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id={`academic_year_${record.id}`}
+                    type="number"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value === ""
+                          ? null
+                          : parseInt(e.target.value, 10),
+                      )
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.academic_year}
+                    placeholder="e.g., 2024"
+                    min="2000"
+                    max="2100"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
 
-	return (
-		<div className="border border-gray-200 rounded-lg overflow-hidden">
-			{/* Header */}
-			<div
-				className="bg-gray-50 px-6 py-4 cursor-pointer hover:bg-gray-100"
-				onClick={() => setIsExpanded(!isExpanded)}
-			>
-				<div className="flex items-center justify-between">
-					<div className="flex-1">
-						<h4 className="font-semibold text-lg text-gray-900">
-							Academic Year {record.academic_year} - Semester {record.semester}
-						</h4>
-						<p className="text-sm text-gray-600 mt-1">
-							SGPA: {record.result_in_sgpa} •{" "}
-							{record.live_backlogs > 0
-								? `${record.live_backlogs} Live Backlog${record.live_backlogs > 1 ? "s" : ""}`
-								: "No Backlogs"}
-						</p>
-					</div>
-					<button
-						type="button"
-						className="text-gray-500 hover:text-gray-700"
-						onClick={(e) => {
-							e.stopPropagation();
-							setIsExpanded(!isExpanded);
-						}}
-					>
-						<svg
-							className={`w-6 h-6 transition-transform ${
-								isExpanded ? "rotate-180" : ""
-							}`}
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M19 9l-7 7-7-7"
-							/>
-						</svg>
-					</button>
-				</div>
-			</div>
+            <form.Field
+              name="semester"
+              validators={{
+                onBlur: z
+                  .number()
+                  .int()
+                  .min(1, "Semester must be at least 1")
+                  .max(8, "Semester must be at most 8")
+                  .nullable(),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Semester"
+                  htmlFor={`semester_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <select
+                    id={`semester_${record.id}`}
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value === ""
+                          ? null
+                          : parseInt(e.target.value, 10),
+                      )
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.semester}
+                    className="select select-bordered w-full"
+                  >
+                    <option value="">Select semester</option>
+                    <option value={1}>Semester 1</option>
+                    <option value={2}>Semester 2</option>
+                    <option value={3}>Semester 3</option>
+                    <option value={4}>Semester 4</option>
+                    <option value={5}>Semester 5</option>
+                    <option value={6}>Semester 6</option>
+                    <option value={7}>Semester 7</option>
+                    <option value={8}>Semester 8</option>
+                  </select>
+                </FormField>
+              )}
+            </form.Field>
+          </div>
 
-			{/* Expandable Form */}
-			{isExpanded && (
-				<form onSubmit={handleSubmit} className="p-6 space-y-4 bg-white">
-					{/* Read-only fields */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-gray-200">
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
-								ID
-							</label>
-							<input
-								type="text"
-								value={record.id}
-								disabled
-								className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-							/>
-						</div>
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
-								USN
-							</label>
-							<input
-								type="text"
-								value={record.usn}
-								disabled
-								className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-							/>
-						</div>
-					</div>
+          {/* SGPA */}
+          <form.Field
+            name="result_in_sgpa"
+            validators={{
+              onBlur: z
+                .number()
+                .min(0, "SGPA must be at least 0")
+                .max(10, "SGPA must be at most 10")
+                .nullable(),
+            }}
+          >
+            {(field) => (
+              <FormField
+                label="Result in SGPA"
+                htmlFor={`result_in_sgpa_${record.id}`}
+                error={getFieldError(field.state.meta.errors)}
+              >
+                <input
+                  id={`result_in_sgpa_${record.id}`}
+                  type="number"
+                  step="0.01"
+                  value={field.state.value ?? ""}
+                  onChange={(e) =>
+                    field.handleChange(
+                      e.target.value === "" ? null : parseFloat(e.target.value),
+                    )
+                  }
+                  onBlur={field.handleBlur}
+                  disabled={!FIELD_PERMISSIONS.result_in_sgpa}
+                  placeholder="e.g., 8.5"
+                  min="0"
+                  max="10"
+                  className="input input-bordered w-full"
+                />
+              </FormField>
+            )}
+          </form.Field>
 
-					{/* Academic Year and Semester */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<FormField
-							label="Academic Year"
-							htmlFor={`academic_year_${record.id}`}
-						>
-							<input
-								id={`academic_year_${record.id}`}
-								type="number"
-								value={formValues.academic_year ?? ""}
-								onChange={(e) =>
-									handleFieldChange(
-										"academic_year",
-										e.target.value === "" ? null : parseInt(e.target.value, 10)
-									)
-								}
-								disabled={!FIELD_PERMISSIONS.academic_year}
-								placeholder="e.g., 2024"
-								min="2000"
-								max="2100"
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-							/>
-						</FormField>
+          {/* Backlogs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form.Field
+              name="closed_backlogs"
+              validators={{
+                onBlur: z
+                  .number()
+                  .int()
+                  .min(0, "Closed backlogs must be at least 0")
+                  .max(50, "Closed backlogs must be at most 50")
+                  .nullable(),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Closed Backlogs"
+                  htmlFor={`closed_backlogs_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id={`closed_backlogs_${record.id}`}
+                    type="number"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value === ""
+                          ? null
+                          : parseInt(e.target.value, 10),
+                      )
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.closed_backlogs}
+                    placeholder="Enter number of closed backlogs"
+                    min="0"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
 
-						<FormField label="Semester" htmlFor={`semester_${record.id}`}>
-							<select
-								id={`semester_${record.id}`}
-								value={formValues.semester ?? ""}
-								onChange={(e) =>
-									handleFieldChange(
-										"semester",
-										e.target.value === "" ? null : parseInt(e.target.value, 10)
-									)
-								}
-								disabled={!FIELD_PERMISSIONS.semester}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-							>
-								<option value="">Select semester</option>
-								<option value={1}>Semester 1</option>
-								<option value={2}>Semester 2</option>
-								<option value={3}>Semester 3</option>
-								<option value={4}>Semester 4</option>
-								<option value={5}>Semester 5</option>
-								<option value={6}>Semester 6</option>
-								<option value={7}>Semester 7</option>
-								<option value={8}>Semester 8</option>
-							</select>
-						</FormField>
-					</div>
+            <form.Field
+              name="live_backlogs"
+              validators={{
+                onBlur: z
+                  .number()
+                  .int()
+                  .min(0, "Live backlogs must be at least 0")
+                  .max(50, "Live backlogs must be at most 50")
+                  .nullable(),
+              }}
+            >
+              {(field) => (
+                <FormField
+                  label="Live Backlogs"
+                  htmlFor={`live_backlogs_${record.id}`}
+                  error={getFieldError(field.state.meta.errors)}
+                >
+                  <input
+                    id={`live_backlogs_${record.id}`}
+                    type="number"
+                    value={field.state.value ?? ""}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value === ""
+                          ? null
+                          : parseInt(e.target.value, 10),
+                      )
+                    }
+                    onBlur={field.handleBlur}
+                    disabled={!FIELD_PERMISSIONS.live_backlogs}
+                    placeholder="Enter number of live backlogs"
+                    min="0"
+                    className="input input-bordered w-full"
+                  />
+                </FormField>
+              )}
+            </form.Field>
+          </div>
 
-					{/* SGPA */}
-					<FormField
-						label="Result in SGPA"
-						htmlFor={`result_in_sgpa_${record.id}`}
-					>
-						<input
-							id={`result_in_sgpa_${record.id}`}
-							type="number"
-							step="0.01"
-							value={formValues.result_in_sgpa ?? ""}
-							onChange={(e) =>
-								handleFieldChange(
-									"result_in_sgpa",
-									e.target.value === "" ? null : parseFloat(e.target.value)
-								)
-							}
-							disabled={!FIELD_PERMISSIONS.result_in_sgpa}
-							placeholder="e.g., 8.5"
-							min="0"
-							max="10"
-							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-						/>
-					</FormField>
+          {/* Provisional Result Upload */}
+          <div className="divider">Provisional Result Document</div>
 
-					{/* Backlogs */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<FormField
-							label="Closed Backlogs"
-							htmlFor={`closed_backlogs_${record.id}`}
-						>
-							<input
-								id={`closed_backlogs_${record.id}`}
-								type="number"
-								value={formValues.closed_backlogs ?? ""}
-								onChange={(e) =>
-									handleFieldChange(
-										"closed_backlogs",
-										e.target.value === "" ? null : parseInt(e.target.value, 10)
-									)
-								}
-								disabled={!FIELD_PERMISSIONS.closed_backlogs}
-								placeholder="Enter number of closed backlogs"
-								min="0"
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-							/>
-						</FormField>
+          {record.provisional_result_upload_link_signed_url && (
+            <div className="alert alert-soft">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                className="stroke-current shrink-0 w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              <div>
+                <div className="text-sm font-medium">
+                  Current provisional result uploaded
+                </div>
+                <Link
+                  href={record.provisional_result_upload_link_signed_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link link-primary text-sm"
+                >
+                  View Document
+                </Link>
+              </div>
+            </div>
+          )}
 
-						<FormField
-							label="Live Backlogs"
-							htmlFor={`live_backlogs_${record.id}`}
-						>
-							<input
-								id={`live_backlogs_${record.id}`}
-								type="number"
-								value={formValues.live_backlogs ?? ""}
-								onChange={(e) =>
-									handleFieldChange(
-										"live_backlogs",
-										e.target.value === "" ? null : parseInt(e.target.value, 10)
-									)
-								}
-								disabled={!FIELD_PERMISSIONS.live_backlogs}
-								placeholder="Enter number of live backlogs"
-								min="0"
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-							/>
-						</FormField>
-					</div>
+          <form.Field name="provisional_result_upload_link">
+            {(field) => (
+              <FormField
+                label="Upload New Provisional Result"
+                htmlFor={`provisional_result_${record.id}`}
+                error={getFieldError(field.state.meta.errors)}
+              >
+                <input
+                  id={`provisional_result_${record.id}`}
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      field.handleChange(file);
+                    }
+                  }}
+                  onBlur={field.handleBlur}
+                  disabled={!FIELD_PERMISSIONS.provisional_result_upload_link}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="file-input file-input-bordered w-full"
+                />
+                {field.state.value && (
+                  <div className="alert alert-success mt-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="stroke-current shrink-0 h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span>Selected: {field.state.value.name}</span>
+                  </div>
+                )}
+              </FormField>
+            )}
+          </form.Field>
 
-					{/* Provisional Result Upload */}
-					<div className="pt-4 border-t border-gray-200">
-						<h5 className="font-medium text-gray-900 mb-4">
-							Provisional Result Document
-						</h5>
-
-						{record.provisional_result_upload_link_signed_url && (
-							<div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-								<p className="text-sm text-blue-800 mb-2">
-									Current provisional result uploaded
-								</p>
-								<a
-									href={record.provisional_result_upload_link_signed_url}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="text-sm text-blue-600 hover:text-blue-800 underline"
-								>
-									View Document
-								</a>
-							</div>
-						)}
-
-						<FormField
-							label="Upload New Provisional Result"
-							htmlFor={`provisional_result_${record.id}`}
-						>
-							<input
-								id={`provisional_result_${record.id}`}
-								type="file"
-								onChange={(e) => {
-									const file = e.target.files?.[0];
-									if (file) {
-										handleFieldChange("provisional_result_upload_link", file);
-									}
-								}}
-								disabled={!FIELD_PERMISSIONS.provisional_result_upload_link}
-								accept=".pdf,.jpg,.jpeg,.png"
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-							/>
-							{formValues.provisional_result_upload_link && (
-								<p className="text-sm text-gray-600 mt-1">
-									Selected: {formValues.provisional_result_upload_link.name}
-								</p>
-							)}
-						</FormField>
-					</div>
-
-					{/* Action Buttons */}
-					<div className="flex gap-4 pt-4 border-t border-gray-200">
-						<button
-							type="submit"
-							disabled={updateMutation.isPending}
-							className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
-						>
-							{updateMutation.isPending && (
-								<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-							)}
-							Save Changes
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								setFormValues({
-									academic_year: record.academic_year,
-									closed_backlogs: record.closed_backlogs,
-									live_backlogs: record.live_backlogs,
-									provisional_result_upload_link: null,
-									result_in_sgpa: record.result_in_sgpa,
-									semester: record.semester
-								});
-								setIsExpanded(false);
-							}}
-							disabled={updateMutation.isPending}
-							className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
-						>
-							Cancel
-						</button>
-					</div>
-				</form>
-			)}
-		</div>
-	);
+          {/* Action Buttons */}
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <div className="flex gap-4 pt-4 border-t border-base-300">
+                <button
+                  type="submit"
+                  disabled={!canSubmit || isSubmitting}
+                  className="btn btn-primary"
+                >
+                  {isSubmitting && (
+                    <span className="loading loading-spinner"></span>
+                  )}
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  disabled={isSubmitting}
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </form.Subscribe>
+        </form>
+      )}
+    </div>
+  );
 }
 
 // ==================== MAIN COMPONENT ====================
 interface SemesterAcademicsFormProps {
-	userId: number;
-	onSuccess?: () => void;
-	onError?: (error: any) => void;
+  userId: number;
+  onSuccess?: () => void;
+  onError?: (error: any) => void;
 }
 
 export default function SemesterAcademicsForm({
-	userId,
-	onSuccess,
-	onError
+  userId,
+  onSuccess,
+  onError,
 }: SemesterAcademicsFormProps) {
-	// Fetch semester academics
-	const { data, isLoading, isError, error } = useQuery({
-		enabled: !!userId,
-		queryFn: async () => {
-			const response = await api.get<GetAcademicsResponse>(
-				`/semester-academics/user/${userId}`
-			);
-			return response.data;
-		},
-		queryKey: ["semester-academics", userId]
-	});
+  const { data, isLoading, isError, error } = useQuery({
+    enabled: !!userId,
+    queryFn: async () => {
+      const response = await api.get<GetAcademicsResponse>(
+        `/semester-academics/user/${userId}`,
+      );
+      return response.data;
+    },
+    queryKey: ["semester-academics", userId],
+  });
 
-	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center p-8">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-			</div>
-		);
-	}
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
 
-	if (isError) {
-		return (
-			<div className="p-4 bg-red-50 text-red-600 rounded-lg">
-				Error loading semester academics: {(error as Error)?.message}
-			</div>
-		);
-	}
+  if (isError) {
+    return (
+      <div className="alert alert-error">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span>
+          Error loading semester academics: {(error as Error)?.message}
+        </span>
+      </div>
+    );
+  }
 
-	return (
-		<div className="space-y-4 max-w-4xl">
-			<h2 className="text-2xl font-bold text-gray-900 mb-6">
-				Semester Academics
-			</h2>
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <h2 className="text-2xl font-bold mb-6">Semester Academics</h2>
 
-			{/* Add New Academic Record Form */}
-			<AddAcademicsForm
-				userId={userId}
-				onSuccess={onSuccess}
-				onError={onError}
-			/>
+      {/* Add New Academic Record Form */}
+      <AddAcademicsForm
+        userId={userId}
+        onSuccess={onSuccess}
+        onError={onError}
+      />
 
-			{/* Existing Academic Records */}
-			{data && data.length > 0 ? (
-				data
-					.sort((a, b) => {
-						// Sort by academic year, then by semester
-						if (a.academic_year !== b.academic_year) {
-							return b.academic_year - a.academic_year;
-						}
-						return b.semester - a.semester;
-					})
-					.map((record) => (
-						<AcademicsRecordForm
-							key={record.id}
-							record={record}
-							onSuccess={onSuccess}
-							onError={onError}
-						/>
-					))
-			) : (
-				<div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
-					No semester academic records found. Add your first record above.
-				</div>
-			)}
-		</div>
-	);
+      {/* Existing Academic Records */}
+      <div className="space-y-4">
+        {data && data.length > 0 ? (
+          data
+            .sort((a, b) => {
+              if (a.academic_year !== b.academic_year) {
+                return b.academic_year - a.academic_year;
+              }
+              return b.semester - a.semester;
+            })
+            .map((record) => (
+              <AcademicsRecordForm
+                key={record.id}
+                record={record}
+                onSuccess={onSuccess}
+                onError={onError}
+              />
+            ))
+        ) : (
+          <div className="p-8 text-center opacity-70 bg-base-200 rounded-lg border-2 border-dashed border-base-300">
+            No semester academic records found. Add your first record above.
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
