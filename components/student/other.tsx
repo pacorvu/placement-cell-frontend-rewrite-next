@@ -689,7 +689,26 @@ function OtherExperienceRecordForm({
 
   const startParsed = parseDateString(record.start_date);
   const endParsed = parseDateString(record.end_date);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.delete(`/other-experiences/${record.id}`);
+      return response.data;
+    },
+    onError: (error: any) => {
+      console.error("Delete error:", error);
+      setShowDeleteConfirm(false);
+      onError?.(error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["other-experiences", record.user_id],
+      });
+      onSuccess?.();
+    },
+  });
   const updateMutation = useMutation({
     mutationFn: async (values: UpdateFormValues) => {
       const formData = new FormData();
@@ -1115,7 +1134,7 @@ function OtherExperienceRecordForm({
               <div className="flex gap-4 pt-4 border-t border-base-300">
                 <button
                   type="submit"
-                  disabled={!canSubmit || isSubmitting}
+                  disabled={!canSubmit || isSubmitting || deleteMutation.isPending}
                   className="btn btn-primary"
                 >
                   {isSubmitting && (
@@ -1126,11 +1145,63 @@ function OtherExperienceRecordForm({
                 <button
                   type="button"
                   onClick={handleReset}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || deleteMutation.isPending}
                   className="btn btn-outline"
                 >
                   Cancel
                 </button>
+
+                {/* Delete button / confirmation */}
+                <div className="ml-auto">
+                  {!showDeleteConfirm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      disabled={isSubmitting || deleteMutation.isPending}
+                      className="btn btn-error btn-outline btn-sm"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      Delete Publication
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 bg-error/10 border border-error rounded-lg px-3 py-2">
+                      <span className="text-sm text-error font-medium">
+                        Are you sure?
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => deleteMutation.mutate()}
+                        disabled={deleteMutation.isPending}
+                        className="btn btn-error btn-sm"
+                      >
+                        {deleteMutation.isPending && (
+                          <span className="loading loading-spinner loading-xs"></span>
+                        )}
+                        Confirm Delete
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        disabled={deleteMutation.isPending}
+                        className="btn btn-outline btn-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </form.Subscribe>
