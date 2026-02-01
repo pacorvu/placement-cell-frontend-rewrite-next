@@ -47,25 +47,7 @@ export default function RoleGuard({ requiredRole, children }: RoleGuardProps) {
   // Access Denied state
   if (allowed === false)
     return (
-      <div className="min-h-screen bg-background p-6 space-y-6">
-        <header
-          className="bg-base-100 shadow-sm border-b border-base-300"
-          data-theme="light"
-        >
-          <div className="navbar max-w-7xl mx-auto px-4 lg:px-8">
-            <Link href="/" className="btn btn-ghost text-xl normal-case">
-              Placement Cell
-            </Link>
-            <div className="navbar-end gap-2 ml-auto">
-              <button
-                onClick={handleLogout}
-                className="btn btn-outline btn-error btn-sm"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </header>
+      <div className="min-h-screen bg-background p-6 space-y-6 management">
         <p className="text-xl font-semibold text-error">
           Access Denied: You do not have permission to view this page.
         </p>

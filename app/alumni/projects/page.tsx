@@ -124,7 +124,7 @@ export default function AlumniProjectsPage() {
     <div className="min-h-screen bg-base-100">
       {/* Header - SQUARE */}
       <div className="sticky top-0 z-40 bg-base-100 border-b-2 border-base-300 shadow-md">
-        <div className="max-w-[1800px] mx-auto px-6 py-5">
+        <div className="max-w-450 mx-auto px-6 py-5">
           <div className="flex items-center gap-6">
             {/* Back Button */}
             <div className="flex items-center">
@@ -227,7 +227,7 @@ export default function AlumniProjectsPage() {
 
 
       {/* Main Content */}
-      <div className="max-w-[1800px] mx-auto px-6 py-8">
+      <div className="max-w-450 mx-auto px-6 py-8">
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
@@ -285,7 +285,7 @@ export default function AlumniProjectsPage() {
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
                       </>
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
+                      <div className="w-full h-full bg-linear-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
                         <span className="text-4xl font-bold text-white/80">
                           {getInitials(project.usn)}
                         </span>
@@ -497,7 +497,7 @@ export default function AlumniProjectsPage() {
                           className="w-full h-full object-contain"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/30 to-secondary/30">
+                        <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-primary/30 to-secondary/30">
                           <span className="text-8xl font-bold text-white/60">
                             {getInitials(selectedProject.usn)}
                           </span>
