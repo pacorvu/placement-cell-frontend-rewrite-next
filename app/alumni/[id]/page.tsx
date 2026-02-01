@@ -247,8 +247,8 @@ export default function AlumniProfilePage({ params }: AlumniProfilePageProps) {
               <div className="card-body">
                 <div className="flex flex-col items-center text-center">
                   <div className="avatar placeholder mb-4">
-                    <div className="bg-primary text-primary-content rounded-full w-24">
-                      <span className="text-3xl">
+                    <div className="bg-primary text-primary-content rounded-full w-24 h-24 flex items-center justify-center">
+                      <span className="text-3xl font-semibold">
                         {alumni.full_name
                           .split(" ")
                           .map((n) => n[0])
@@ -257,6 +257,7 @@ export default function AlumniProfilePage({ params }: AlumniProfilePageProps) {
                       </span>
                     </div>
                   </div>
+
                   <h1 className="text-2xl font-bold mb-1">
                     {alumni.full_name}
                   </h1>

@@ -38,6 +38,8 @@ export default function AlumniProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [linkErrors, setLinkErrors] = useState<{ [key: string]: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   // Get access token from localStorage
   const getAccessToken = () => {
@@ -111,6 +113,40 @@ export default function AlumniProfilePage() {
       setIsLoading(false);
     }
   };
+  const isValidHttpUrl = (value: string) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  const validateLink = (key: string, value: string) => {
+    if (!value || value.trim() === "") {
+      // Empty is NOT allowed - links are required once added
+      setLinkErrors({
+        ...linkErrors,
+        [key]:
+          "This link is required. Please enter a URL or remove this field.",
+      });
+      return false;
+    }
+
+    if (!isValidHttpUrl(value)) {
+      setLinkErrors({
+        ...linkErrors,
+        [key]: "Please enter a valid URL starting with http:// or https://",
+      });
+      return false;
+    }
+
+    // Valid URL - clear any existing error
+    const newErrors = { ...linkErrors };
+    delete newErrors[key];
+    setLinkErrors(newErrors);
+    return true;
+  };
 
   // Load profile on mount
   useEffect(() => {
@@ -140,8 +176,51 @@ export default function AlumniProfilePage() {
   };
 
   const handleSave = async () => {
+    // Validate required fields
+    const newFieldErrors: { [key: string]: string } = {};
+
+    if (!formData.full_name || formData.full_name.trim() === "") {
+      newFieldErrors.full_name = "Full name is required";
+    }
+
+    if (!formData.phone_number || formData.phone_number.trim() === "") {
+      newFieldErrors.phone_number = "Phone number is required";
+    }
+
+    // Validate all links before saving
+    let hasErrors = false;
+    const errors: { [key: string]: string } = {};
+
+    Object.entries(formData.other_links).forEach(([key, value]) => {
+      if (!value || value.trim() === "") {
+        errors[key] =
+          "This link is required. Please enter a URL or remove this field.";
+        hasErrors = true;
+      } else if (!isValidHttpUrl(value)) {
+        errors[key] =
+          "Please enter a valid URL starting with http:// or https://";
+        hasErrors = true;
+      }
+    });
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      setError("Please fill in all required fields");
+      if (hasErrors) {
+        setLinkErrors(errors);
+      }
+      return;
+    }
+
+    if (hasErrors) {
+      setLinkErrors(errors);
+      setError("Please fix the invalid links before saving");
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
+    setFieldErrors({});
 
     const token = getAccessToken();
     const userId = getUserId();
@@ -165,7 +244,6 @@ export default function AlumniProfilePage() {
         current_company: formData.current_company,
         current_designation: formData.current_designation,
         current_work_location: formData.current_work_location,
-        personal_email: formData.personal_email,
         phone_number: formData.phone_number,
         other_links: formData.other_links,
         refered_by: formData.refered_by || undefined,
@@ -194,6 +272,7 @@ export default function AlumniProfilePage() {
       // Refresh profile data after successful update
       await fetchProfile();
       setIsEditing(false);
+      setLinkErrors({});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update profile");
     } finally {
@@ -248,6 +327,8 @@ export default function AlumniProfilePage() {
                   <button
                     onClick={() => {
                       setIsEditing(false);
+                      setLinkErrors({});
+                      setFieldErrors({});
                       fetchProfile(); // Reset form data
                     }}
                     className="btn btn-ghost"
@@ -257,7 +338,11 @@ export default function AlumniProfilePage() {
                   <button
                     onClick={handleSave}
                     className="btn btn-primary gap-2"
-                    disabled={isSaving}
+                    disabled={
+                      isSaving ||
+                      Object.keys(linkErrors).length > 0 ||
+                      Object.keys(fieldErrors).length > 0
+                    }
                   >
                     {isSaving ? (
                       <>
@@ -321,16 +406,32 @@ export default function AlumniProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-semibold">Full Name</span>
+                    <span className="label-text font-semibold">
+                      Full Name <span className="text-error">*</span>
+                    </span>
                   </label>
                   <input
                     type="text"
                     name="full_name"
-                    className="input input-bordered w-full"
+                    className={`input input-bordered w-full ${fieldErrors.full_name ? "input-error" : ""}`}
                     value={formData.full_name}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      handleChange(e);
+                      if (fieldErrors.full_name) {
+                        const newErrors = { ...fieldErrors };
+                        delete newErrors.full_name;
+                        setFieldErrors(newErrors);
+                      }
+                    }}
                     disabled={!isEditing}
                   />
+                  {fieldErrors.full_name && (
+                    <label className="label">
+                      <span className="label-text-alt text-error">
+                        {fieldErrors.full_name}
+                      </span>
+                    </label>
+                  )}
                 </div>
 
                 <div className="form-control">
@@ -340,25 +441,45 @@ export default function AlumniProfilePage() {
                   <input
                     type="email"
                     name="personal_email"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-base-300"
                     value={formData.personal_email}
-                    onChange={handleChange}
-                    disabled={!isEditing}
+                    disabled
                   />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">
+                      To change your email, contact the placement cell
+                    </span>
+                  </label>
                 </div>
 
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-semibold">Phone</span>
+                    <span className="label-text font-semibold">
+                      Phone <span className="text-error">*</span>
+                    </span>
                   </label>
                   <input
                     type="tel"
                     name="phone_number"
-                    className="input input-bordered w-full"
+                    className={`input input-bordered w-full ${fieldErrors.phone_number ? "input-error" : ""}`}
                     value={formData.phone_number}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      handleChange(e);
+                      if (fieldErrors.phone_number) {
+                        const newErrors = { ...fieldErrors };
+                        delete newErrors.phone_number;
+                        setFieldErrors(newErrors);
+                      }
+                    }}
                     disabled={!isEditing}
                   />
+                  {fieldErrors.phone_number && (
+                    <label className="label">
+                      <span className="label-text-alt text-error">
+                        {fieldErrors.phone_number}
+                      </span>
+                    </label>
+                  )}
                 </div>
 
                 <div className="form-control">
@@ -478,52 +599,120 @@ export default function AlumniProfilePage() {
               <h2 className="card-title text-2xl mb-4">Social Links</h2>
 
               <div className="grid grid-cols-1 gap-6">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold">LinkedIn</span>
-                  </label>
-                  <input
-                    type="url"
-                    name="linkedin"
-                    className="input input-bordered w-full"
-                    value={formData.other_links?.linkedin || ""}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    placeholder="https://linkedin.com/in/..."
-                  />
-                </div>
+                {Object.entries(formData.other_links).map(([key, value]) => (
+                  <div key={key} className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold capitalize">
+                        {key} <span className="text-error">*</span>
+                      </span>
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updatedLinks = { ...formData.other_links };
+                            delete updatedLinks[key];
+                            setFormData({
+                              ...formData,
+                              other_links: updatedLinks,
+                            });
+                            // Clear error for this link
+                            const newErrors = { ...linkErrors };
+                            delete newErrors[key];
+                            setLinkErrors(newErrors);
+                          }}
+                          className="btn btn-ghost btn-xs"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </label>
+                    <input
+                      type="url"
+                      className={`input input-bordered w-full ${linkErrors[key] ? "input-error" : ""}`}
+                      value={value || ""}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setFormData({
+                          ...formData,
+                          other_links: {
+                            ...formData.other_links,
+                            [key]: newValue,
+                          },
+                        });
+                        validateLink(key, newValue);
+                      }}
+                      disabled={!isEditing}
+                      placeholder="https://example.com"
+                    />
+                    {linkErrors[key] && (
+                      <label className="label">
+                        <span className="label-text-alt text-error">
+                          {linkErrors[key]}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                ))}
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold">GitHub</span>
-                  </label>
-                  <input
-                    type="url"
-                    name="github"
-                    className="input input-bordered w-full"
-                    value={formData.other_links?.github || ""}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    placeholder="https://github.com/..."
-                  />
-                </div>
+                {isEditing && (
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold">
+                        Link Name
+                      </span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        id="newLinkKey"
+                        className="input input-bordered w-full"
+                        placeholder="e.g., Twitter, Instagram"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const input = document.getElementById(
+                            "newLinkKey",
+                          ) as HTMLInputElement;
+                          const newKey = input?.value?.trim();
+                          if (newKey) {
+                            setFormData({
+                              ...formData,
+                              other_links: {
+                                ...formData.other_links,
+                                [newKey]: "",
+                              },
+                            });
+                            input.value = "";
+                          }
+                        }}
+                        className="btn btn-primary gap-2"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 4v16m8-8H4"
+                          />
+                        </svg>
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold">
-                      Portfolio Website
-                    </span>
-                  </label>
-                  <input
-                    type="url"
-                    name="portfolio"
-                    className="input input-bordered w-full"
-                    value={formData.other_links?.portfolio || ""}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    placeholder="https://yourwebsite.com"
-                  />
-                </div>
+                {Object.keys(formData.other_links).length === 0 && (
+                  <p className="text-base-content/60 text-center py-4">
+                    No social links added yet
+                  </p>
+                )}
               </div>
             </div>
           </div>
