@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "../../components/ThemeToggle";
+import { authService } from "../../lib/api";
+
 export default function StudentLayout({
   children,
 }: {
@@ -14,8 +16,7 @@ export default function StudentLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem("isLoggedIn");
-    if (loggedIn === "true") {
+    if (authService.getAccessToken()) {
       setIsAuthenticated(true);
     } else {
       router.replace("/login");
@@ -24,25 +25,8 @@ export default function StudentLayout({
   }, [router]);
 
   const handleLogout = async () => {
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          jwt_token: localStorage.getItem("access_token"),
-        }),
-      });
-    } catch (err) {
-      console.error("Logout request failed");
-    } finally {
-      const theme = localStorage.getItem("theme");
-      localStorage.clear();
-      localStorage.setItem("theme", theme || "light");
-
-      router.replace("/login");
-    }
+    await authService.logout();
+    router.replace("/login");
   };
 
   if (loading) {

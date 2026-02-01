@@ -1,4 +1,4 @@
-// api.ts// api.ts
+// api.ts
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 export const api = axios.create({
@@ -37,7 +37,19 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Token management helpers
+// Storage helpers
+const setLoginData = (data: LoginResponse): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('access_token', data.access_token);
+    localStorage.setItem('refresh_token', data.refresh_token);
+    localStorage.setItem('user_id', data.user_id.toString());
+    localStorage.setItem('role_type', data.role_type);
+    if (data.token_type) {
+      localStorage.setItem('token_type', data.token_type);
+    }
+  }
+};
+
 const getAccessToken = (): string | null => {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('access_token');
@@ -52,14 +64,7 @@ const getRefreshToken = (): string | null => {
   return null;
 };
 
-const setTokens = (accessToken: string, refreshToken: string): void => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('access_token', accessToken);
-    localStorage.setItem('refresh_token', refreshToken);
-  }
-};
-
-const clearTokens = (): void => {
+const clearLoginData = (): void => {
   if (typeof window !== 'undefined') {
     const theme = localStorage.getItem('theme');
     const message = localStorage.getItem('message');
@@ -105,11 +110,10 @@ api.interceptors.response.use(
     }
 
     if (originalRequest.url?.includes('/auth/refresh')) {
-      clearTokens();
+      clearLoginData();
       return Promise.reject(error);
     }
 
-    // Queue requests while refreshing
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
@@ -130,7 +134,7 @@ api.interceptors.response.use(
 
     if (!refreshToken) {
       isRefreshing = false;
-      clearTokens();
+      clearLoginData();
       return Promise.reject(error);
     }
 
@@ -141,7 +145,9 @@ api.interceptors.response.use(
       );
 
       const { access_token, refresh_token: new_refresh_token } = response.data;
-      setTokens(access_token, new_refresh_token);
+      // Only overwrite the two tokens, leave user_id / role_type untouched
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', new_refresh_token);
 
       if (originalRequest.headers) {
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
@@ -154,7 +160,7 @@ api.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null);
       isRefreshing = false;
-      clearTokens();
+      clearLoginData();
       return Promise.reject(refreshError);
     }
   },
@@ -168,8 +174,7 @@ export const authService = {
       password,
     });
 
-    const { access_token, refresh_token } = response.data;
-    setTokens(access_token, refresh_token);
+    setLoginData(response.data);
 
     return response.data;
   },
@@ -181,12 +186,11 @@ export const authService = {
     } catch (err) {
       console.error('Logout request failed:', err);
     } finally {
-      clearTokens();
+      clearLoginData();
     }
   },
 
   getAccessToken,
   getRefreshToken,
-  setTokens,
-  clearTokens,
+  clearLoginData,
 };
