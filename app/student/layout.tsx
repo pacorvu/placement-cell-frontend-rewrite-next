@@ -37,10 +37,15 @@ export default function StudentLayout({
     );
   }
 
-  if (!isAuthenticated) {
-    return null;
+  const roleType = localStorage.getItem("role_type") ?? "leave bro"
+
+  if (roleType !== "Student") {
+    router.replace("/login");
   }
 
+  if (!isAuthenticated) {
+    router.replace("/login");
+  }
   return (
     <div className="min-h-screen flex flex-col">
       {/* ================= HEADER ================= */}
