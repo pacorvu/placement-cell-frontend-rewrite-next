@@ -37,7 +37,6 @@ export default function AlumniProjectsPage() {
     null,
   );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
   const limit = 50;
 
@@ -72,20 +71,9 @@ export default function AlumniProjectsPage() {
     fetchProjects();
   }, [currentPage]);
 
-  // Get unique skills
-  const allSkills = useMemo(() => {
-    const skillSet = new Set<string>();
-    projects.forEach((project) => {
-      if (project.skills && Array.isArray(project.skills)) {
-        project.skills.forEach((skill) => skillSet.add(skill));
-      }
-    });
-    return Array.from(skillSet).sort();
-  }, [projects]);
-
-  // Filter and sort
+  // Filter and sort projects
   const filteredProjects = useMemo(() => {
-    let filtered = projects.filter((project) => {
+    const filtered = projects.filter((project) => {
       const matchesSearch =
         project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (project.description
@@ -97,14 +85,10 @@ export default function AlumniProjectsPage() {
         ) ??
           false);
 
-      const matchesSkills =
-        selectedSkills.length === 0 ||
-        (project.skills &&
-          selectedSkills.some((skill) => project.skills!.includes(skill)));
-
-      return matchesSearch && matchesSkills;
+      return matchesSearch;
     });
 
+    // Sort by date
     filtered.sort((a, b) => {
       if (sortBy === "newest")
         return (
@@ -116,7 +100,7 @@ export default function AlumniProjectsPage() {
     });
 
     return filtered;
-  }, [projects, searchQuery, selectedSkills, sortBy]);
+  }, [projects, searchQuery, sortBy]);
 
   // Get initials for avatar
   const getInitials = (usn: string) => {
@@ -139,14 +123,14 @@ export default function AlumniProjectsPage() {
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header - SQUARE */}
-      <div className="sticky top-0 z-40 bg-base-100 border-b border-base-300 shadow-sm">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
+      <div className="sticky top-0 z-40 bg-base-100 border-b-2 border-base-300 shadow-md">
+        <div className="max-w-[1800px] mx-auto px-6 py-5">
           <div className="flex items-center gap-6">
-            {/* Back & Logo */}
-            <div className="flex items-center gap-4">
+            {/* Back Button */}
+            <div className="flex items-center">
               <Link
                 href="/alumni/dashboard"
-                className="btn btn-ghost btn-sm gap-2"
+                className="btn btn-ghost btn-sm gap-2 hover:bg-base-200"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -162,19 +146,17 @@ export default function AlumniProjectsPage() {
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
+                Back
               </Link>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold">Student Projects</h1>
-              </div>
             </div>
 
             {/* Search */}
-            <div className="flex-1 max-w-2xl">
+            <div className="flex-1">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Search projects, skills, descriptions..."
-                  className="input input-bordered w-full pl-12 pr-4 focus:outline-offset-0 focus:outline-primary rounded-none"
+                  className="input input-bordered w-full pl-12 pr-4 focus:outline-offset-0 focus:outline-primary rounded-none h-12"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -216,113 +198,33 @@ export default function AlumniProjectsPage() {
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="hidden lg:flex items-center gap-3">
-              <div className="bg-base-200 px-3 py-1.5 text-sm">
+            {/* Filter Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSortBy("newest")}
+                className={`btn btn-sm rounded-none ${sortBy === "newest" ? "btn-neutral" : "btn-ghost"}`}
+              >
+                Newest
+              </button>
+              <button
+                onClick={() => setSortBy("oldest")}
+                className={`btn btn-sm rounded-none ${sortBy === "oldest" ? "btn-neutral" : "btn-ghost"}`}
+              >
+                Oldest
+              </button>
+              <div className="h-8 w-px bg-base-300 mx-2"></div>
+              <div className="bg-base-200 px-4 py-2 text-sm font-medium">
                 <span className="font-bold text-primary">
-                  {filteredProjects.length}
+                  {totalProjects}
                 </span>
-                <span className="text-base-content/60 ml-1">Projects</span>
+                <span className="text-base-content/60 ml-1.5">total projects</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filter Pills - SQUARE */}
-      <div className="sticky top-[73px] z-30 bg-base-100 border-b border-base-300">
-        <div className="max-w-[1800px] mx-auto px-6 py-3">
-          <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2">
-            <button
-              onClick={() => setSortBy("newest")}
-              className={`btn btn-sm rounded-none ${sortBy === "newest" ? "btn-neutral" : "btn-ghost"}`}
-            >
-              Latest
-            </button>
-            <button
-              onClick={() => setSortBy("oldest")}
-              className={`btn btn-sm rounded-none ${sortBy === "oldest" ? "btn-neutral" : "btn-ghost"}`}
-            >
-              Oldest
-            </button>
 
-            <div className="divider divider-horizontal mx-0"></div>
-
-            {allSkills.slice(0, 12).map((skill) => (
-              <button
-                key={skill}
-                onClick={() =>
-                  setSelectedSkills((prev) =>
-                    prev.includes(skill)
-                      ? prev.filter((s) => s !== skill)
-                      : [...prev, skill],
-                  )
-                }
-                className={`btn btn-sm whitespace-nowrap rounded-none ${selectedSkills.includes(skill) ? "btn-primary" : "btn-ghost"}`}
-              >
-                {skill}
-              </button>
-            ))}
-
-            {allSkills.length > 12 && (
-              <div className="dropdown dropdown-end">
-                <button
-                  tabIndex={0}
-                  className="btn btn-sm btn-ghost rounded-none"
-                >
-                  +{allSkills.length - 12} more
-                </button>
-                <div
-                  tabIndex={0}
-                  className="dropdown-content z-[1] menu p-2 shadow-xl bg-base-100 rounded-none border border-base-300 w-52 max-h-80 overflow-y-auto mt-2"
-                >
-                  {allSkills.slice(12).map((skill) => (
-                    <li key={skill}>
-                      <button
-                        onClick={() =>
-                          setSelectedSkills((prev) =>
-                            prev.includes(skill)
-                              ? prev.filter((s) => s !== skill)
-                              : [...prev, skill],
-                          )
-                        }
-                        className={
-                          selectedSkills.includes(skill) ? "active" : ""
-                        }
-                      >
-                        {skill}
-                      </button>
-                    </li>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {selectedSkills.length > 0 && (
-              <button
-                onClick={() => setSelectedSkills([])}
-                className="btn btn-sm btn-ghost rounded-none gap-1"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="max-w-[1800px] mx-auto px-6 py-8">
@@ -373,7 +275,7 @@ export default function AlumniProjectsPage() {
                   {/* Thumbnail - SQUARE */}
                   <div className="relative aspect-video overflow-hidden bg-base-300 mb-3 shadow-lg">
                     {project.snaps_signed_urls &&
-                    project.snaps_signed_urls.length > 0 ? (
+                      project.snaps_signed_urls.length > 0 ? (
                       <>
                         <img
                           src={project.snaps_signed_urls[0]}
@@ -452,8 +354,18 @@ export default function AlumniProjectsPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex justify-center mt-12">
+              <div className="flex flex-col items-center gap-4 mt-12">
+                <div className="text-sm text-base-content/60">
+                  Page {currentPage} of {totalPages} ({totalProjects} total projects)
+                </div>
                 <div className="join shadow-lg">
+                  <button
+                    className="join-item btn rounded-none"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    «
+                  </button>
                   <button
                     className="join-item btn rounded-none"
                     onClick={() =>
@@ -461,11 +373,33 @@ export default function AlumniProjectsPage() {
                     }
                     disabled={currentPage === 1}
                   >
-                    Previous
+                    ‹ Previous
                   </button>
-                  <button className="join-item btn btn-active rounded-none">
-                    Page {currentPage}
-                  </button>
+
+                  {/* Page Numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        className={`join-item btn rounded-none ${currentPage === pageNum ? "btn-active" : ""}`}
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+
                   <button
                     className="join-item btn rounded-none"
                     onClick={() =>
@@ -473,7 +407,14 @@ export default function AlumniProjectsPage() {
                     }
                     disabled={currentPage === totalPages}
                   >
-                    Next
+                    Next ›
+                  </button>
+                  <button
+                    className="join-item btn rounded-none"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    »
                   </button>
                 </div>
               </div>
@@ -499,16 +440,13 @@ export default function AlumniProjectsPage() {
             </div>
             <h3 className="text-2xl font-bold mb-2">No projects found</h3>
             <p className="text-base-content/60 mb-6">
-              Try adjusting your search or filters
+              Try a different search term
             </p>
             <button
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedSkills([]);
-              }}
+              onClick={() => setSearchQuery("")}
               className="btn btn-primary rounded-none"
             >
-              Clear Filters
+              Clear Search
             </button>
           </div>
         )}
@@ -561,7 +499,7 @@ export default function AlumniProjectsPage() {
                     {/* Main Image */}
                     <div className="relative bg-black aspect-video">
                       {selectedProject.snaps_signed_urls &&
-                      selectedProject.snaps_signed_urls.length > 0 ? (
+                        selectedProject.snaps_signed_urls.length > 0 ? (
                         <img
                           src={
                             selectedProject.snaps_signed_urls[currentImageIndex]
@@ -587,7 +525,7 @@ export default function AlumniProjectsPage() {
                                 setCurrentImageIndex((prev) =>
                                   prev === 0
                                     ? selectedProject.snaps_signed_urls.length -
-                                      1
+                                    1
                                     : prev - 1,
                                 );
                               }}
@@ -613,7 +551,7 @@ export default function AlumniProjectsPage() {
                                 e.stopPropagation();
                                 setCurrentImageIndex((prev) =>
                                   prev ===
-                                  selectedProject.snaps_signed_urls.length - 1
+                                    selectedProject.snaps_signed_urls.length - 1
                                     ? 0
                                     : prev + 1,
                                 );
@@ -656,11 +594,10 @@ export default function AlumniProjectsPage() {
                                     e.stopPropagation();
                                     setCurrentImageIndex(index);
                                   }}
-                                  className={`shrink-0 w-28 h-20 overflow-hidden border-3 transition-all ${
-                                    currentImageIndex === index
-                                      ? "border-primary shadow-lg scale-105"
-                                      : "border-base-300 opacity-60 hover:opacity-100 hover:scale-105"
-                                  }`}
+                                  className={`shrink-0 w-28 h-20 overflow-hidden border-3 transition-all ${currentImageIndex === index
+                                    ? "border-primary shadow-lg scale-105"
+                                    : "border-base-300 opacity-60 hover:opacity-100 hover:scale-105"
+                                    }`}
                                 >
                                   <img
                                     src={url}
