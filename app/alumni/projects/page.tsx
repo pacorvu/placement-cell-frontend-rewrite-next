@@ -319,34 +319,23 @@ export default function AlumniProjectsPage() {
                   </div>
 
                   {/* Info */}
-                  <div className="flex gap-3">
-                    {/* Avatar - SQUARE */}
-                    <div className="avatar placeholder shrink-0">
-                      <div className="bg-gradient-to-br from-primary to-secondary text-white w-9 h-9">
-                        <span className="text-xs font-bold">
-                          {getInitials(project.usn)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
-                        {project.title}
-                      </h3>
-                      <p className="text-xs text-base-content/60 mb-1">
-                        {project.usn}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-base-content/60">
-                        <span>{formatDate(project.created_at)}</span>
-                        {project.mentor_name && (
-                          <>
-                            <span>•</span>
-                            <span className="truncate">
-                              Mentor: {project.mentor_name}
-                            </span>
-                          </>
-                        )}
-                      </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+                      {project.title}
+                    </h3>
+                    <p className="text-xs text-base-content/60 mb-1">
+                      {project.usn}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-base-content/60">
+                      <span>{formatDate(project.created_at)}</span>
+                      {project.mentor_name && (
+                        <>
+                          <span>•</span>
+                          <span className="truncate">
+                            Mentor: {project.mentor_name}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -648,22 +637,13 @@ export default function AlumniProjectsPage() {
 
                     {/* Student Info */}
                     <div className="mb-6">
-                      <div className="flex items-center gap-3 mb-4 p-4 bg-base-100 border-l-4 border-primary">
-                        <div className="avatar placeholder">
-                          <div className="bg-gradient-to-br from-primary to-secondary text-white w-12 h-12">
-                            <span className="text-sm font-bold">
-                              {getInitials(selectedProject.usn)}
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-xs text-base-content/60 uppercase tracking-wider">
-                            Student
-                          </p>
-                          <p className="font-bold text-lg">
-                            {selectedProject.usn}
-                          </p>
-                        </div>
+                      <div className="p-4 bg-base-100 border-l-4 border-primary">
+                        <p className="text-xs text-base-content/60 uppercase tracking-wider">
+                          Student
+                        </p>
+                        <p className="font-bold text-lg">
+                          {selectedProject.usn}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-base-content/70 px-4">
                         <svg
