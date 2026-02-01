@@ -7,12 +7,12 @@ interface ProjectData {
   id: number;
   title: string;
   description: string | null;
-  skills: string[];
+  skills: string[] | null;
   project_link: string | null;
   mentor_name: string | null;
   usn: string;
   user_id: number | null;
-  snaps: string[];
+  snaps: string[] | null;
   snaps_signed_urls: string[];
   created_at: string;
   updated_at: string;
@@ -33,7 +33,9 @@ export default function AlumniProjectsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProjects, setTotalProjects] = useState(0);
-  const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
+  const [selectedProject, setSelectedProject] = useState<ProjectData | null>(
+    null,
+  );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
@@ -51,7 +53,7 @@ export default function AlumniProjectsPage() {
 
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/projects/all?page=${currentPage}&limit=${limit}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
 
         if (!response.ok) throw new Error("Failed to fetch projects");
@@ -73,7 +75,11 @@ export default function AlumniProjectsPage() {
   // Get unique skills
   const allSkills = useMemo(() => {
     const skillSet = new Set<string>();
-    projects.forEach((project) => project.skills.forEach((skill) => skillSet.add(skill)));
+    projects.forEach((project) => {
+      if (project.skills && Array.isArray(project.skills)) {
+        project.skills.forEach((skill) => skillSet.add(skill));
+      }
+    });
     return Array.from(skillSet).sort();
   }, [projects]);
 
@@ -82,18 +88,31 @@ export default function AlumniProjectsPage() {
     let filtered = projects.filter((project) => {
       const matchesSearch =
         project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-        project.skills.some((skill) => skill.toLowerCase().includes(searchQuery.toLowerCase()));
+        (project.description
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ??
+          false) ||
+        (project.skills?.some((skill) =>
+          skill.toLowerCase().includes(searchQuery.toLowerCase()),
+        ) ??
+          false);
 
       const matchesSkills =
-        selectedSkills.length === 0 || selectedSkills.some((skill) => project.skills.includes(skill));
+        selectedSkills.length === 0 ||
+        (project.skills &&
+          selectedSkills.some((skill) => project.skills!.includes(skill)));
 
       return matchesSearch && matchesSkills;
     });
 
     filtered.sort((a, b) => {
-      if (sortBy === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortBy === "newest")
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      return (
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
     });
 
     return filtered;
@@ -125,9 +144,23 @@ export default function AlumniProjectsPage() {
           <div className="flex items-center gap-6">
             {/* Back & Logo */}
             <div className="flex items-center gap-4">
-              <Link href="/alumni/dashboard" className="btn btn-ghost btn-sm gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <Link
+                href="/alumni/dashboard"
+                className="btn btn-ghost btn-sm gap-2"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </Link>
               <div className="flex items-center gap-3">
@@ -152,15 +185,31 @@ export default function AlumniProjectsPage() {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
                     className="absolute right-4 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs btn-square min-h-0 h-6 w-6"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 )}
@@ -170,7 +219,9 @@ export default function AlumniProjectsPage() {
             {/* Stats */}
             <div className="hidden lg:flex items-center gap-3">
               <div className="bg-base-200 px-3 py-1.5 text-sm">
-                <span className="font-bold text-primary">{filteredProjects.length}</span>
+                <span className="font-bold text-primary">
+                  {filteredProjects.length}
+                </span>
                 <span className="text-base-content/60 ml-1">Projects</span>
               </div>
             </div>
@@ -202,7 +253,9 @@ export default function AlumniProjectsPage() {
                 key={skill}
                 onClick={() =>
                   setSelectedSkills((prev) =>
-                    prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
+                    prev.includes(skill)
+                      ? prev.filter((s) => s !== skill)
+                      : [...prev, skill],
                   )
                 }
                 className={`btn btn-sm whitespace-nowrap rounded-none ${selectedSkills.includes(skill) ? "btn-primary" : "btn-ghost"}`}
@@ -213,19 +266,29 @@ export default function AlumniProjectsPage() {
 
             {allSkills.length > 12 && (
               <div className="dropdown dropdown-end">
-                <button tabIndex={0} className="btn btn-sm btn-ghost rounded-none">
+                <button
+                  tabIndex={0}
+                  className="btn btn-sm btn-ghost rounded-none"
+                >
                   +{allSkills.length - 12} more
                 </button>
-                <div tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-xl bg-base-100 rounded-none border border-base-300 w-52 max-h-80 overflow-y-auto mt-2">
+                <div
+                  tabIndex={0}
+                  className="dropdown-content z-[1] menu p-2 shadow-xl bg-base-100 rounded-none border border-base-300 w-52 max-h-80 overflow-y-auto mt-2"
+                >
                   {allSkills.slice(12).map((skill) => (
                     <li key={skill}>
                       <button
                         onClick={() =>
                           setSelectedSkills((prev) =>
-                            prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
+                            prev.includes(skill)
+                              ? prev.filter((s) => s !== skill)
+                              : [...prev, skill],
                           )
                         }
-                        className={selectedSkills.includes(skill) ? "active" : ""}
+                        className={
+                          selectedSkills.includes(skill) ? "active" : ""
+                        }
                       >
                         {skill}
                       </button>
@@ -236,9 +299,23 @@ export default function AlumniProjectsPage() {
             )}
 
             {selectedSkills.length > 0 && (
-              <button onClick={() => setSelectedSkills([])} className="btn btn-sm btn-ghost rounded-none gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <button
+                onClick={() => setSelectedSkills([])}
+                className="btn btn-sm btn-ghost rounded-none gap-1"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
                 Clear
               </button>
@@ -266,8 +343,18 @@ export default function AlumniProjectsPage() {
           </div>
         ) : error ? (
           <div className="alert alert-error rounded-none">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span>{error}</span>
           </div>
@@ -285,7 +372,8 @@ export default function AlumniProjectsPage() {
                 >
                   {/* Thumbnail - SQUARE */}
                   <div className="relative aspect-video overflow-hidden bg-base-300 mb-3 shadow-lg">
-                    {project.snaps_signed_urls && project.snaps_signed_urls.length > 0 ? (
+                    {project.snaps_signed_urls &&
+                    project.snaps_signed_urls.length > 0 ? (
                       <>
                         <img
                           src={project.snaps_signed_urls[0]}
@@ -304,13 +392,24 @@ export default function AlumniProjectsPage() {
 
                     {/* Badges - SQUARE */}
                     <div className="absolute bottom-2 right-2 bg-black/90 text-white text-xs font-bold px-2 py-1">
-                      {project.skills.length} skills
+                      {project.skills?.length || 0} skills
                     </div>
 
                     {project.snaps_signed_urls.length > 1 && (
                       <div className="absolute top-2 right-2 bg-black/90 text-white text-xs font-bold px-2 py-1 flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3 w-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
                         </svg>
                         {project.snaps_signed_urls.length}
                       </div>
@@ -322,7 +421,9 @@ export default function AlumniProjectsPage() {
                     {/* Avatar - SQUARE */}
                     <div className="avatar placeholder shrink-0">
                       <div className="bg-gradient-to-br from-primary to-secondary text-white w-9 h-9">
-                        <span className="text-xs font-bold">{getInitials(project.usn)}</span>
+                        <span className="text-xs font-bold">
+                          {getInitials(project.usn)}
+                        </span>
                       </div>
                     </div>
 
@@ -330,13 +431,17 @@ export default function AlumniProjectsPage() {
                       <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
                         {project.title}
                       </h3>
-                      <p className="text-xs text-base-content/60 mb-1">{project.usn}</p>
+                      <p className="text-xs text-base-content/60 mb-1">
+                        {project.usn}
+                      </p>
                       <div className="flex items-center gap-2 text-xs text-base-content/60">
                         <span>{formatDate(project.created_at)}</span>
                         {project.mentor_name && (
                           <>
                             <span>•</span>
-                            <span className="truncate">Mentor: {project.mentor_name}</span>
+                            <span className="truncate">
+                              Mentor: {project.mentor_name}
+                            </span>
                           </>
                         )}
                       </div>
@@ -351,7 +456,9 @@ export default function AlumniProjectsPage() {
                 <div className="join shadow-lg">
                   <button
                     className="join-item btn rounded-none"
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
                     disabled={currentPage === 1}
                   >
                     Previous
@@ -361,7 +468,9 @@ export default function AlumniProjectsPage() {
                   </button>
                   <button
                     className="join-item btn rounded-none"
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
                     disabled={currentPage === totalPages}
                   >
                     Next
@@ -373,12 +482,25 @@ export default function AlumniProjectsPage() {
         ) : (
           <div className="text-center py-20">
             <div className="w-24 h-24 mx-auto mb-6 bg-base-200 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-12 w-12 text-base-content/30"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             </div>
             <h3 className="text-2xl font-bold mb-2">No projects found</h3>
-            <p className="text-base-content/60 mb-6">Try adjusting your search or filters</p>
+            <p className="text-base-content/60 mb-6">
+              Try adjusting your search or filters
+            </p>
             <button
               onClick={() => {
                 setSearchQuery("");
@@ -414,8 +536,19 @@ export default function AlumniProjectsPage() {
                   }}
                   className="btn btn-ghost text-white hover:bg-white/10 w-10 h-10 min-h-0 p-0 rounded-none"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -427,88 +560,143 @@ export default function AlumniProjectsPage() {
                   <div className="lg:col-span-2">
                     {/* Main Image */}
                     <div className="relative bg-black aspect-video">
-                      {selectedProject.snaps_signed_urls && selectedProject.snaps_signed_urls.length > 0 ? (
+                      {selectedProject.snaps_signed_urls &&
+                      selectedProject.snaps_signed_urls.length > 0 ? (
                         <img
-                          src={selectedProject.snaps_signed_urls[currentImageIndex]}
+                          src={
+                            selectedProject.snaps_signed_urls[currentImageIndex]
+                          }
                           alt={selectedProject.title}
                           className="w-full h-full object-contain"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/30 to-secondary/30">
-                          <span className="text-8xl font-bold text-white/60">{getInitials(selectedProject.usn)}</span>
+                          <span className="text-8xl font-bold text-white/60">
+                            {getInitials(selectedProject.usn)}
+                          </span>
                         </div>
                       )}
 
                       {/* Nav Buttons */}
-                      {selectedProject.snaps_signed_urls && selectedProject.snaps_signed_urls.length > 1 && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCurrentImageIndex((prev) =>
-                                prev === 0 ? selectedProject.snaps_signed_urls.length - 1 : prev - 1
-                              );
-                            }}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 btn bg-white hover:bg-white/90 w-12 h-12 min-h-0 p-0 border-none rounded-none"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCurrentImageIndex((prev) =>
-                                prev === selectedProject.snaps_signed_urls.length - 1 ? 0 : prev + 1
-                              );
-                            }}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 btn bg-white hover:bg-white/90 w-12 h-12 min-h-0 p-0 border-none rounded-none"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </button>
-                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 text-sm font-semibold">
-                            {currentImageIndex + 1} / {selectedProject.snaps_signed_urls.length}
-                          </div>
-                        </>
-                      )}
+                      {selectedProject.snaps_signed_urls &&
+                        selectedProject.snaps_signed_urls.length > 1 && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentImageIndex((prev) =>
+                                  prev === 0
+                                    ? selectedProject.snaps_signed_urls.length -
+                                      1
+                                    : prev - 1,
+                                );
+                              }}
+                              className="absolute left-4 top-1/2 -translate-y-1/2 btn bg-white hover:bg-white/90 w-12 h-12 min-h-0 p-0 border-none rounded-none"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 19l-7-7 7-7"
+                                />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentImageIndex((prev) =>
+                                  prev ===
+                                  selectedProject.snaps_signed_urls.length - 1
+                                    ? 0
+                                    : prev + 1,
+                                );
+                              }}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 btn bg-white hover:bg-white/90 w-12 h-12 min-h-0 p-0 border-none rounded-none"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5l7 7-7 7"
+                                />
+                              </svg>
+                            </button>
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 text-sm font-semibold">
+                              {currentImageIndex + 1} /{" "}
+                              {selectedProject.snaps_signed_urls.length}
+                            </div>
+                          </>
+                        )}
                     </div>
 
                     {/* Thumbnails */}
-                    {selectedProject.snaps_signed_urls && selectedProject.snaps_signed_urls.length > 1 && (
-                      <div className="bg-base-200 p-4 border-r border-base-300">
-                        <div className="flex gap-3 overflow-x-auto pb-2">
-                          {selectedProject.snaps_signed_urls.map((url, index) => (
-                            <button
-                              key={index}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCurrentImageIndex(index);
-                              }}
-                              className={`shrink-0 w-28 h-20 overflow-hidden border-3 transition-all ${currentImageIndex === index
-                                ? "border-primary shadow-lg scale-105"
-                                : "border-base-300 opacity-60 hover:opacity-100 hover:scale-105"
-                                }`}
-                            >
-                              <img src={url} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" />
-                            </button>
-                          ))}
+                    {selectedProject.snaps_signed_urls &&
+                      selectedProject.snaps_signed_urls.length > 1 && (
+                        <div className="bg-base-200 p-4 border-r border-base-300">
+                          <div className="flex gap-3 overflow-x-auto pb-2">
+                            {selectedProject.snaps_signed_urls.map(
+                              (url, index) => (
+                                <button
+                                  key={index}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentImageIndex(index);
+                                  }}
+                                  className={`shrink-0 w-28 h-20 overflow-hidden border-3 transition-all ${
+                                    currentImageIndex === index
+                                      ? "border-primary shadow-lg scale-105"
+                                      : "border-base-300 opacity-60 hover:opacity-100 hover:scale-105"
+                                  }`}
+                                >
+                                  <img
+                                    src={url}
+                                    alt={`Thumbnail ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </button>
+                              ),
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {/* Description Section */}
                     <div className="p-6 border-t border-r border-base-300">
                       <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5 text-primary"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
                         </svg>
                         Project Description
                       </h3>
                       <div className="bg-base-200 p-4">
                         <p className="text-base leading-relaxed whitespace-pre-wrap">
-                          {selectedProject.description || "No description provided for this project."}
+                          {selectedProject.description ||
+                            "No description provided for this project."}
                         </p>
                       </div>
                     </div>
@@ -517,26 +705,47 @@ export default function AlumniProjectsPage() {
                   {/* Right Sidebar - All Info in One Column */}
                   <div className="bg-base-200 p-6">
                     {/* Title */}
-                    <h2 className="text-2xl font-bold mb-6">{selectedProject.title}</h2>
+                    <h2 className="text-2xl font-bold mb-6">
+                      {selectedProject.title}
+                    </h2>
 
                     {/* Student Info */}
                     <div className="mb-6">
                       <div className="flex items-center gap-3 mb-4 p-4 bg-base-100 border-l-4 border-primary">
                         <div className="avatar placeholder">
                           <div className="bg-gradient-to-br from-primary to-secondary text-white w-12 h-12">
-                            <span className="text-sm font-bold">{getInitials(selectedProject.usn)}</span>
+                            <span className="text-sm font-bold">
+                              {getInitials(selectedProject.usn)}
+                            </span>
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs text-base-content/60 uppercase tracking-wider">Student</p>
-                          <p className="font-bold text-lg">{selectedProject.usn}</p>
+                          <p className="text-xs text-base-content/60 uppercase tracking-wider">
+                            Student
+                          </p>
+                          <p className="font-bold text-lg">
+                            {selectedProject.usn}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-base-content/70 px-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
                         </svg>
-                        <span>Created {formatDate(selectedProject.created_at)}</span>
+                        <span>
+                          Created {formatDate(selectedProject.created_at)}
+                        </span>
                       </div>
                     </div>
 
@@ -545,45 +754,78 @@ export default function AlumniProjectsPage() {
                       <div className="mb-6 p-4 bg-base-100 border-l-4 border-secondary">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-secondary/20">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5 text-secondary"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                              />
                             </svg>
                           </div>
                           <div>
-                            <p className="text-xs text-base-content/60 uppercase tracking-wider">Mentor</p>
-                            <p className="font-bold">{selectedProject.mentor_name}</p>
+                            <p className="text-xs text-base-content/60 uppercase tracking-wider">
+                              Mentor
+                            </p>
+                            <p className="font-bold">
+                              {selectedProject.mentor_name}
+                            </p>
                           </div>
                         </div>
                       </div>
                     )}
 
                     {/* Technologies */}
-                    <div className="mb-6">
-                      <h3 className="text-sm font-bold mb-3 flex items-center gap-2 uppercase tracking-wider text-base-content/70">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                        </svg>
-                        Technologies
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedProject.skills.map((skill, index) => (
-                          <div
-                            key={index}
-                            className="bg-base-100 border-2 border-primary/30 px-3 py-1.5 text-xs font-semibold"
-                          >
-                            {skill}
+                    {selectedProject.skills &&
+                      selectedProject.skills.length > 0 && (
+                        <div className="mb-6">
+                          <h3 className="text-sm font-bold mb-3 flex items-center gap-2 uppercase tracking-wider text-base-content/70">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                              />
+                            </svg>
+                            Technologies
+                          </h3>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedProject.skills.map((skill, index) => (
+                              <div
+                                key={index}
+                                className="bg-base-100 border-2 border-primary/30 px-3 py-1.5 text-xs font-semibold"
+                              >
+                                {skill}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </div>
+                      )}
 
                     {/* Stats */}
                     <div className="mb-6">
-                      <h3 className="text-sm font-bold mb-3 uppercase tracking-wider text-base-content/70">Project Stats</h3>
+                      <h3 className="text-sm font-bold mb-3 uppercase tracking-wider text-base-content/70">
+                        Project Stats
+                      </h3>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between p-3 bg-base-100">
                           <span className="text-sm">Technologies</span>
-                          <span className="badge badge-primary rounded-none">{selectedProject.skills.length}</span>
+                          <span className="badge badge-primary rounded-none">
+                            {selectedProject.skills?.length || 0}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between p-3 bg-base-100">
                           <span className="text-sm">Images</span>
@@ -593,7 +835,9 @@ export default function AlumniProjectsPage() {
                         </div>
                         <div className="flex items-center justify-between p-3 bg-base-100">
                           <span className="text-sm">Link Status</span>
-                          <span className={`badge rounded-none ${selectedProject.project_link ? "badge-success" : "badge-ghost"}`}>
+                          <span
+                            className={`badge rounded-none ${selectedProject.project_link ? "badge-success" : "badge-ghost"}`}
+                          >
                             {selectedProject.project_link ? "Available" : "N/A"}
                           </span>
                         </div>
@@ -613,8 +857,19 @@ export default function AlumniProjectsPage() {
                         className="btn btn-primary btn-lg w-full gap-3 group rounded-none"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-6 w-6 transition-transform group-hover:scale-110"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
                         </svg>
                         Visit Live Project
                       </a>

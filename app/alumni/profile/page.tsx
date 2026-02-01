@@ -1,53 +1,213 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface AlumniProfile {
+  full_name: string;
+  graduation_year: number;
+  current_company: string;
+  current_designation: string;
+  current_work_location: string;
+  personal_email: string;
+  phone_number: string;
+  other_links: {
+    linkedin?: string;
+    github?: string;
+    portfolio?: string;
+    [key: string]: any;
+  };
+  refered_by?: string;
+  batch?: string;
+  department?: string;
+}
 
 export default function AlumniProfilePage() {
-  const [formData, setFormData] = useState({
-    // Personal Information
-    name: "John Doe",
-    usn: "1RVU19CSE001",
-    email: "john.doe@example.com",
-    phone: "+91 9876543210",
-    batch: "2019-2023",
-    department: "Computer Science",
-
-    // Current Employment
-    currentCompany: "Google",
-    currentDesignation: "Software Engineer",
-    currentLocation: "Bangalore",
-
-    // Social Links
-    linkedin: "https://linkedin.com/in/johndoe",
-    github: "https://github.com/johndoe",
-    portfolio: "https://johndoe.com",
-
-    // Skills
-    skills: "Python, React, Node.js, AWS, Docker",
-
-    // Bio
-    bio: "Passionate software engineer with 2 years of experience in full-stack development.",
+  const [formData, setFormData] = useState<AlumniProfile>({
+    full_name: "",
+    graduation_year: 0,
+    current_company: "",
+    current_designation: "",
+    current_work_location: "",
+    personal_email: "",
+    phone_number: "",
+    other_links: {},
+    refered_by: "",
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get access token from localStorage
+  const getAccessToken = () => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("access_token");
+    }
+    return null;
+  };
+
+  // Get user ID from localStorage
+  const getUserId = () => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("user_id");
+    }
+    return null;
+  };
+
+  // Fetch alumni profile
+  const fetchProfile = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const token = getAccessToken();
+    const userId = getUserId();
+
+    if (!token) {
+      setError("Access token not found. Please login again.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!userId) {
+      setError("User ID not found. Please login again.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/alumni/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch profile: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setFormData({
+        full_name: data.full_name || "",
+        graduation_year: data.graduation_year || 0,
+        current_company: data.current_company || "",
+        current_designation: data.current_designation || "",
+        current_work_location: data.current_work_location || "",
+        personal_email: data.personal_email || "",
+        phone_number: data.phone_number || "",
+        other_links: data.other_links || {},
+        refered_by: data.refered_by || "",
+        batch: data.batch,
+        department: data.department,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch profile");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load profile on mount
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    // Handle nested other_links properties
+    if (name === "linkedin" || name === "github" || name === "portfolio") {
+      setFormData({
+        ...formData,
+        other_links: {
+          ...formData.other_links,
+          [name]: value,
+        },
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: name === "graduation_year" ? parseInt(value) || 0 : value,
+      });
+    }
   };
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSaving(false);
-    setIsEditing(false);
+    setError(null);
+
+    const token = getAccessToken();
+    const userId = getUserId();
+
+    if (!token) {
+      setError("Access token not found. Please login again.");
+      setIsSaving(false);
+      return;
+    }
+
+    if (!userId) {
+      setError("User ID not found. Please login again.");
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      const payload = {
+        full_name: formData.full_name,
+        graduation_year: formData.graduation_year,
+        current_company: formData.current_company,
+        current_designation: formData.current_designation,
+        current_work_location: formData.current_work_location,
+        personal_email: formData.personal_email,
+        phone_number: formData.phone_number,
+        other_links: formData.other_links,
+        refered_by: formData.refered_by || undefined,
+      };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/alumni/${userId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message ||
+            `Failed to update profile: ${response.statusText}`,
+        );
+      }
+
+      // Refresh profile data after successful update
+      await fetchProfile();
+      setIsEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -86,7 +246,10 @@ export default function AlumniProfilePage() {
               ) : (
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setIsEditing(false)}
+                    onClick={() => {
+                      setIsEditing(false);
+                      fetchProfile(); // Reset form data
+                    }}
                     className="btn btn-ghost"
                   >
                     Cancel
@@ -129,6 +292,26 @@ export default function AlumniProfilePage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 lg:px-8 py-8">
+        {/* Error Alert */}
+        {error && (
+          <div className="alert alert-error mb-6">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
+
         <div className="space-y-6">
           {/* Personal Information */}
           <div className="card bg-base-200 shadow-lg">
@@ -142,24 +325,11 @@ export default function AlumniProfilePage() {
                   </label>
                   <input
                     type="text"
-                    name="name"
+                    name="full_name"
                     className="input input-bordered w-full"
-                    value={formData.name}
+                    value={formData.full_name}
                     onChange={handleChange}
                     disabled={!isEditing}
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold">USN</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="usn"
-                    className="input input-bordered w-full bg-base-300"
-                    value={formData.usn}
-                    disabled
                   />
                 </div>
 
@@ -169,9 +339,9 @@ export default function AlumniProfilePage() {
                   </label>
                   <input
                     type="email"
-                    name="email"
+                    name="personal_email"
                     className="input input-bordered w-full"
-                    value={formData.email}
+                    value={formData.personal_email}
                     onChange={handleChange}
                     disabled={!isEditing}
                   />
@@ -183,9 +353,9 @@ export default function AlumniProfilePage() {
                   </label>
                   <input
                     type="tel"
-                    name="phone"
+                    name="phone_number"
                     className="input input-bordered w-full"
-                    value={formData.phone}
+                    value={formData.phone_number}
                     onChange={handleChange}
                     disabled={!isEditing}
                   />
@@ -193,44 +363,57 @@ export default function AlumniProfilePage() {
 
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-semibold">Batch</span>
+                    <span className="label-text font-semibold">
+                      Graduation Year
+                    </span>
                   </label>
                   <input
-                    type="text"
-                    name="batch"
-                    className="input input-bordered w-full bg-base-300"
-                    value={formData.batch}
-                    disabled
+                    type="number"
+                    name="graduation_year"
+                    className="input input-bordered w-full"
+                    value={formData.graduation_year || ""}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    placeholder="e.g. 2023"
                   />
                 </div>
 
-                <div className="form-control">
+                {formData.department && (
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold">
+                        Department
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      name="department"
+                      className="input input-bordered w-full bg-base-300"
+                      value={formData.department}
+                      disabled
+                    />
+                  </div>
+                )}
+              </div>
+
+              {formData.refered_by !== undefined && (
+                <div className="form-control mt-4">
                   <label className="label">
-                    <span className="label-text font-semibold">Department</span>
+                    <span className="label-text font-semibold">
+                      Referred By
+                    </span>
                   </label>
                   <input
                     type="text"
-                    name="department"
-                    className="input input-bordered w-full bg-base-300"
-                    value={formData.department}
-                    disabled
+                    name="refered_by"
+                    className="input input-bordered w-full"
+                    value={formData.refered_by}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    placeholder="Name of the person who referred you"
                   />
                 </div>
-              </div>
-
-              <div className="form-control mt-4">
-                <label className="label">
-                  <span className="label-text font-semibold">Bio</span>
-                </label>
-                <textarea
-                  name="bio"
-                  className="textarea textarea-bordered h-24 w-full"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  placeholder="Tell us about yourself..."
-                ></textarea>
-              </div>
+              )}
             </div>
           </div>
 
@@ -246,9 +429,9 @@ export default function AlumniProfilePage() {
                   </label>
                   <input
                     type="text"
-                    name="currentCompany"
+                    name="current_company"
                     className="input input-bordered w-full"
-                    value={formData.currentCompany}
+                    value={formData.current_company}
                     onChange={handleChange}
                     disabled={!isEditing}
                   />
@@ -256,13 +439,15 @@ export default function AlumniProfilePage() {
 
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-semibold">Designation</span>
+                    <span className="label-text font-semibold">
+                      Designation
+                    </span>
                   </label>
                   <input
                     type="text"
-                    name="currentDesignation"
+                    name="current_designation"
                     className="input input-bordered w-full"
-                    value={formData.currentDesignation}
+                    value={formData.current_designation}
                     onChange={handleChange}
                     disabled={!isEditing}
                   />
@@ -270,40 +455,19 @@ export default function AlumniProfilePage() {
 
                 <div className="form-control md:col-span-2">
                   <label className="label">
-                    <span className="label-text font-semibold">Location</span>
+                    <span className="label-text font-semibold">
+                      Work Location
+                    </span>
                   </label>
                   <input
                     type="text"
-                    name="currentLocation"
+                    name="current_work_location"
                     className="input input-bordered w-full"
-                    value={formData.currentLocation}
+                    value={formData.current_work_location}
                     onChange={handleChange}
                     disabled={!isEditing}
                   />
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Skills */}
-          <div className="card bg-base-200 shadow-lg">
-            <div className="card-body">
-              <h2 className="card-title text-2xl mb-4">Skills & Expertise</h2>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">
-                    Skills (comma-separated)
-                  </span>
-                </label>
-                <textarea
-                  name="skills"
-                  className="textarea textarea-bordered h-20 w-full"
-                  value={formData.skills}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  placeholder="e.g. Python, React, Machine Learning, AWS"
-                ></textarea>
               </div>
             </div>
           </div>
@@ -322,7 +486,7 @@ export default function AlumniProfilePage() {
                     type="url"
                     name="linkedin"
                     className="input input-bordered w-full"
-                    value={formData.linkedin}
+                    value={formData.other_links?.linkedin || ""}
                     onChange={handleChange}
                     disabled={!isEditing}
                     placeholder="https://linkedin.com/in/..."
@@ -337,7 +501,7 @@ export default function AlumniProfilePage() {
                     type="url"
                     name="github"
                     className="input input-bordered w-full"
-                    value={formData.github}
+                    value={formData.other_links?.github || ""}
                     onChange={handleChange}
                     disabled={!isEditing}
                     placeholder="https://github.com/..."
@@ -354,7 +518,7 @@ export default function AlumniProfilePage() {
                     type="url"
                     name="portfolio"
                     className="input input-bordered w-full"
-                    value={formData.portfolio}
+                    value={formData.other_links?.portfolio || ""}
                     onChange={handleChange}
                     disabled={!isEditing}
                     placeholder="https://yourwebsite.com"
