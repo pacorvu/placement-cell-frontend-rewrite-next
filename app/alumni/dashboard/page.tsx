@@ -8,8 +8,6 @@ export default function AlumniPage() {
   const employmentRate = 100; // Assuming all mock alumni are employed
   const topCompanies = ["Google", "Amazon", "Microsoft", "Goldman Sachs"];
 
-  const featuredAlumni = mockAlumni.slice(0, 3);
-
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header */}
@@ -261,77 +259,6 @@ export default function AlumniPage() {
                 </div>
               </div>
             </Link>
-          </div>
-        </div>
-
-        {/* Featured Alumni */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Featured Alumni</h2>
-            <Link
-              href="/alumni/directory"
-              className="btn btn-outline btn-sm"
-            >
-              View All
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featuredAlumni.map((alumni) => (
-              <Link
-                key={alumni.id}
-                href={`/alumni/${alumni.id}`}
-                className="card bg-base-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-              >
-                <div className="card-body">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="avatar placeholder">
-                      <div className="bg-primary text-primary-content rounded-full w-16">
-                        <span className="text-xl">
-                          {alumni.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg">{alumni.name}</h3>
-                      <p className="text-sm text-base-content/60">
-                        {alumni.id}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="divider my-2"></div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4 text-primary"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                      </svg>
-                      <p className="text-sm font-medium">
-                        {alumni.currentEmployment.company}
-                      </p>
-                    </div>
-                    <p className="text-sm text-base-content/70">
-                      {alumni.currentEmployment.designation}
-                    </p>
-                    <p className="text-xs text-base-content/60">
-                      {alumni.currentEmployment.location}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            ))}
           </div>
         </div>
 

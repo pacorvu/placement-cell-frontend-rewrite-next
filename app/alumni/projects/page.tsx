@@ -106,7 +106,7 @@ export default function AlumniProjectsPage() {
         <div className="max-w-7xl mx-auto px-4 lg:px-8">
           <div className="flex items-center gap-2 mb-4">
             <Link
-              href="/placement/alumni"
+              href="/alumni/dashboard"
               className="btn btn-ghost btn-sm gap-2"
             >
               <svg
@@ -206,7 +206,7 @@ export default function AlumniProjectsPage() {
                   <div className="card-body flex flex-col p-4">
                     {/* Project Image/Thumbnail */}
                     {project.snaps_signed_urls &&
-                    project.snaps_signed_urls.length > 0 ? (
+                      project.snaps_signed_urls.length > 0 ? (
                       <figure className="rounded-lg mb-4 h-48 overflow-hidden relative">
                         <img
                           src={project.snaps_signed_urls[0]}
@@ -415,28 +415,6 @@ export default function AlumniProjectsPage() {
           )
         )}
 
-        {/* Info Box */}
-        <div className="mt-8">
-          <div className="alert alert-info">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              className="stroke-current shrink-0 w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              ></path>
-            </svg>
-            <span>
-              Want to feature your project? Contact the placement cell to submit
-              your work!
-            </span>
-          </div>
-        </div>
       </div>
 
       {/* Project Detail Modal */}
@@ -445,11 +423,11 @@ export default function AlumniProjectsPage() {
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={handleModalClick}
         >
-          <div className="bg-base-100 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-base-100 rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-base-100 border-b border-base-300 p-6 flex items-start justify-between z-10">
+            <div className="bg-base-100 border-b border-base-300 px-6 py-4 flex items-start justify-between">
               <div className="flex-1 pr-4">
-                <h2 className="text-2xl font-bold mb-2">
+                <h2 className="text-2xl font-bold mb-1">
                   {selectedProject.title}
                 </h2>
                 {selectedProject.usn && (
@@ -482,19 +460,20 @@ export default function AlumniProjectsPage() {
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 space-y-6">
-              {/* Image Gallery */}
-              {selectedProject.snaps_signed_urls &&
-                selectedProject.snaps_signed_urls.length > 0 && (
-                  <div className="space-y-4">
-                    <div className="relative rounded-lg overflow-hidden bg-base-300">
+            {/* Modal Body - Grid Layout */}
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-y-auto">
+              {/* Left Column - Image Gallery */}
+              <div className="space-y-4">
+                {selectedProject.snaps_signed_urls &&
+                  selectedProject.snaps_signed_urls.length > 0 ? (
+                  <>
+                    <div className="relative rounded-xl overflow-hidden bg-base-300 aspect-video">
                       <img
                         src={
                           selectedProject.snaps_signed_urls[currentImageIndex]
                         }
                         alt={`${selectedProject.title} - Image ${currentImageIndex + 1}`}
-                        className="w-full h-auto max-h-96 object-contain mx-auto"
+                        className="w-full h-full object-contain"
                       />
 
                       {/* Image Navigation */}
@@ -509,27 +488,30 @@ export default function AlumniProjectsPage() {
                                   : prev - 1,
                               );
                             }}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 btn btn-circle btn-md bg-base-100/80 hover:bg-base-100 border-none shadow-lg"
                           >
-                            ❮
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               setCurrentImageIndex((prev) =>
                                 prev ===
-                                selectedProject.snaps_signed_urls.length - 1
+                                  selectedProject.snaps_signed_urls.length - 1
                                   ? 0
                                   : prev + 1,
                               );
                             }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 btn btn-circle btn-md bg-base-100/80 hover:bg-base-100 border-none shadow-lg"
                           >
-                            ❯
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
                           </button>
-                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-base-100/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold">
-                            {currentImageIndex + 1} /{" "}
-                            {selectedProject.snaps_signed_urls.length}
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-base-100/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-semibold shadow-md">
+                            {currentImageIndex + 1} / {selectedProject.snaps_signed_urls.length}
                           </div>
                         </>
                       )}
@@ -537,7 +519,7 @@ export default function AlumniProjectsPage() {
 
                     {/* Image Thumbnails */}
                     {selectedProject.snaps_signed_urls.length > 1 && (
-                      <div className="flex gap-2 overflow-x-auto pb-2">
+                      <div className="flex gap-3 overflow-x-auto pb-2">
                         {selectedProject.snaps_signed_urls.map((url, index) => (
                           <button
                             key={index}
@@ -545,11 +527,10 @@ export default function AlumniProjectsPage() {
                               e.stopPropagation();
                               setCurrentImageIndex(index);
                             }}
-                            className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                              currentImageIndex === index
-                                ? "border-primary"
-                                : "border-transparent opacity-60 hover:opacity-100"
-                            }`}
+                            className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${currentImageIndex === index
+                              ? "border-primary shadow-md"
+                              : "border-base-300 opacity-70 hover:opacity-100"
+                              }`}
                           >
                             <img
                               src={url}
@@ -560,130 +541,137 @@ export default function AlumniProjectsPage() {
                         ))}
                       </div>
                     )}
-                  </div>
-                )}
-
-              {/* Description */}
-              <div>
-                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h7"
-                    />
-                  </svg>
-                  Description
-                </h3>
-                <p className="text-base-content/80">
-                  {selectedProject.description ||
-                    "No description provided for this project."}
-                </p>
-              </div>
-
-              {/* Skills */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                    />
-                  </svg>
-                  Skills & Technologies
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedProject.skills.map((skill, index) => (
-                    <div key={index} className="badge badge-lg badge-primary">
-                      {skill}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Project Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {selectedProject.mentor_name && (
-                  <div className="card bg-base-200">
-                    <div className="card-body p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 text-primary"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-xs text-base-content/60">Mentor</p>
-                          <p className="font-semibold">
-                            {selectedProject.mentor_name}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedProject.usn && (
-                  <div className="card bg-base-200">
-                    <div className="card-body p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-secondary/10 rounded-lg">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 text-secondary"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-xs text-base-content/60">
-                            Student
-                          </p>
-                          <p className="font-semibold">{selectedProject.usn}</p>
-                        </div>
-                      </div>
-                    </div>
+                  </>
+                ) : (
+                  <div className="aspect-video bg-base-300 rounded-xl flex items-center justify-center">
+                    <p className="text-base-content/50">No images available</p>
                   </div>
                 )}
               </div>
 
-              {/* Project Link */}
-              {selectedProject.project_link && (
+              {/* Right Column - Project Details */}
+              <div className="space-y-5">
+
+                {/* Description */}
                 <div>
+                  <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h16M4 18h7"
+                      />
+                    </svg>
+                    Description
+                  </h3>
+                  <p className="text-base-content/80 text-sm leading-relaxed">
+                    {selectedProject.description ||
+                      "No description provided for this project."}
+                  </p>
+                </div>
+
+                {/* Skills */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                      />
+                    </svg>
+                    Skills & Technologies
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProject.skills.map((skill, index) => (
+                      <div key={index} className="badge badge-primary badge-sm">
+                        {skill}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Team Info */}
+                <div className="grid grid-cols-1 gap-3">
+                  {selectedProject.mentor_name && (
+                    <div className="card bg-base-200">
+                      <div className="card-body p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5 text-primary"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                              />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-xs text-base-content/60">Mentor</p>
+                            <p className="font-semibold text-sm">
+                              {selectedProject.mentor_name}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedProject.usn && (
+                    <div className="card bg-base-200">
+                      <div className="card-body p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-secondary/10 rounded-lg">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5 text-secondary"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-xs text-base-content/60">
+                              Student
+                            </p>
+                            <p className="font-semibold text-sm">{selectedProject.usn}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Project Link */}
+                {selectedProject.project_link && (
                   <a
                     href={
                       selectedProject.project_link.startsWith("http")
@@ -711,8 +699,8 @@ export default function AlumniProjectsPage() {
                     </svg>
                     Visit Project
                   </a>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -720,3 +708,4 @@ export default function AlumniProjectsPage() {
     </div>
   );
 }
+
