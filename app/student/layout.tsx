@@ -82,9 +82,6 @@ export default function StudentLayout({
                   <Link href="/student/profile">Profile</Link>
                 </li>
                 <li>
-                  <Link href="/student/drives">Placement Drives</Link>
-                </li>
-                <li>
                   <Link href="/student/offers">Job Offers</Link>
                 </li>
                 <li>
