@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(if exist CLAUDE.md echo \"file exists\")",
+      "Bash(findstr /i \"claude\")"
+    ]
+  }
+}
