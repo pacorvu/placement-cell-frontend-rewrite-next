@@ -15,8 +15,8 @@ export default function PlacementLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem("isLoggedIn");
-    if (loggedIn === "true") {
+    const token = localStorage.getItem("access_token");
+    if (token) {
       setIsAuthenticated(true);
     } else {
       router.replace("/login");

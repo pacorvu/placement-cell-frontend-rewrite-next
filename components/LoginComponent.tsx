@@ -57,7 +57,7 @@ export default function LoginComponent() {
           router.push("/management/dashboard");
         else if (data.role_type === "Parents")
           router.push("/parents/dashboard");
-        else if (data.role_type === "Placement_Officer")
+        else if (data.role_type === "Placement_officer")
           router.push("/placement/dashboard");
         else {
           setAlert({
