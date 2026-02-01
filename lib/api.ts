@@ -1,6 +1,5 @@
-// api.ts
+// api.ts// api.ts
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import { userService } from './userService';
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
@@ -20,15 +19,6 @@ interface LoginResponse {
   role_type: string;
   token_type?: 'bearer';
 }
-
-// Define routes that should trigger user data refetch on POST
-const INVALIDATION_ROUTES = [
-  '/students',
-  '/feedback',
-  '/projects',
-  '/profile',
-  // Add any other routes that modify user-related data
-];
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -62,22 +52,10 @@ const getRefreshToken = (): string | null => {
   return null;
 };
 
-const setTokens = (
-  accessToken: string,
-  refreshToken: string,
-  userId?: number,
-  roleType?: string,
-): void => {
+const setTokens = (accessToken: string, refreshToken: string): void => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
-    localStorage.setItem('isLoggedIn', 'true');
-    if (userId) {
-      localStorage.setItem('user_id', userId.toString());
-    }
-    if (roleType) {
-      localStorage.setItem('role_type', roleType);
-    }
   }
 };
 
@@ -92,18 +70,10 @@ const clearTokens = (): void => {
     if (message) {
       localStorage.setItem('message', message);
     }
-    userService.clearUserCache();
-
-    // Redirect to login
     if (window.location.pathname !== '/login') {
       window.location.href = '/login';
     }
   }
-};
-
-// Check if URL matches invalidation routes
-const shouldInvalidateCache = (url: string): boolean => {
-  return INVALIDATION_ROUTES.some((route) => url.includes(route));
 };
 
 // Request interceptor - Add access token to all requests
@@ -118,41 +88,22 @@ api.interceptors.request.use(
   (error: unknown) => Promise.reject(error),
 );
 
-// Response interceptor - Handle token refresh and cache invalidation
+// Response interceptor - Handle token refresh on 401
 api.interceptors.response.use(
-  async (response) => {
-    // Invalidate and refetch user data on successful POST/PUT/PATCH/DELETE
-    const method = response.config.method?.toLowerCase();
-    const url = response.config.url || '';
-
-    if (
-      ['post', 'put', 'patch', 'delete'].includes(method || '') &&
-      shouldInvalidateCache(url)
-    ) {
-      // Fire and forget - don't wait for refetch
-      userService.invalidateAndRefetch().catch((error) => {
-        console.error('Failed to refetch user data:', error);
-      });
-    }
-
-    return response;
-  },
+  (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
 
-    // If no config, just reject
     if (!originalRequest) {
       return Promise.reject(error);
     }
 
-    // If not 401 or already retried, just reject
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);
     }
 
-    // If refresh endpoint fails, clear tokens and reject
     if (originalRequest.url?.includes('/auth/refresh')) {
       clearTokens();
       return Promise.reject(error);
@@ -177,7 +128,6 @@ api.interceptors.response.use(
 
     const refreshToken = getRefreshToken();
 
-    // No refresh token available, clear and reject
     if (!refreshToken) {
       isRefreshing = false;
       clearTokens();
@@ -185,39 +135,23 @@ api.interceptors.response.use(
     }
 
     try {
-      // Attempt token refresh
       const response = await axios.post<RefreshTokenResponse>(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/refresh`,
-        {
-          refresh_token: refreshToken,
-        },
+        { refresh_token: refreshToken },
       );
 
       const { access_token, refresh_token: new_refresh_token } = response.data;
+      setTokens(access_token, new_refresh_token);
 
-      // Update tokens in localStorage (preserve user_id and role_type)
-      const userId = localStorage.getItem('user_id');
-      const roleType = localStorage.getItem('role_type');
-      setTokens(
-        access_token,
-        new_refresh_token,
-        userId ? parseInt(userId) : undefined,
-        roleType || undefined,
-      );
-
-      // Update the original request with new token
       if (originalRequest.headers) {
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
       }
 
-      // Process all queued requests
       processQueue(null, access_token);
       isRefreshing = false;
 
-      // Retry the original request
       return api(originalRequest);
     } catch (refreshError) {
-      // Refresh failed, clear tokens and reject all queued requests
       processQueue(refreshError, null);
       isRefreshing = false;
       clearTokens();
@@ -234,20 +168,16 @@ export const authService = {
       password,
     });
 
-    const { user_id, access_token, refresh_token, role_type } = response.data;
+    const { access_token, refresh_token } = response.data;
+    setTokens(access_token, refresh_token);
 
-    // Store tokens and user info
-    setTokens(access_token, refresh_token, user_id, role_type);
     return response.data;
   },
 
   async logout() {
     const accessToken = getAccessToken();
-
     try {
-      await api.post('/auth/logout', {
-        jwt_token: accessToken,
-      });
+      await api.post('/auth/logout', { jwt_token: accessToken });
     } catch (err) {
       console.error('Logout request failed:', err);
     } finally {
@@ -257,25 +187,6 @@ export const authService = {
 
   getAccessToken,
   getRefreshToken,
-  getRoleType: (): string | null => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('role_type');
-    }
-    return null;
-  },
-  getUserId: (): number | null => {
-    if (typeof window !== 'undefined') {
-      const userId = localStorage.getItem('user_id');
-      return userId ? parseInt(userId) : null;
-    }
-    return null;
-  },
-  isLoggedIn: (): boolean => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('isLoggedIn') === 'true';
-    }
-    return false;
-  },
   setTokens,
   clearTokens,
 };
