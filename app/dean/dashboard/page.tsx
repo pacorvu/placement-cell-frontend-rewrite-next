@@ -468,7 +468,7 @@ export default function DeanSOCSEDashboard() {
     );
   };
   return (
-    <RoleGuard requiredRole="Management">
+    <RoleGuard requiredRole="Dean">
       <Content />
     </RoleGuard>
   );

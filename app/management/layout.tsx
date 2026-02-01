@@ -12,8 +12,8 @@ export default function ManagementLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem("isLoggedIn");
-    if (loggedIn === "true") {
+    const access_token = localStorage.getItem("access_token");
+    if (access_token) {
       setIsAuthenticated(true);
     } else {
       router.replace("/login");
