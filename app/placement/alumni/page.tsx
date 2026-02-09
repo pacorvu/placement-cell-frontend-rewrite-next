@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
 import {
   Table,
   TableBody,
@@ -11,28 +10,47 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ChevronDown, Search, Columns3, Download, Building2, MapPin } from "lucide-react";
-import type { AlumniProfile } from "@/lib/alumni-types";
+import { ChevronDown, Search, Columns3, Download, Building2, MapPin, Github, Linkedin } from "lucide-react";
 
-interface AlumniResponse {
-  alumni: AlumniProfile[];
+interface AlumniData {
+  id: number;
+  usn: string | null;
+  full_name: string;
+  graduation_year: number | null;
+  current_company: string | null;
+  current_designation: string | null;
+  current_work_location: string | null;
+  phone_number: string | null;
+  other_links: {
+    github?: string;
+    linkedin?: string;
+    [key: string]: any;
+  } | null;
+  personal_email: string | null;
+  user_id: number | null;
+  created_at: string;
+  updated_at: string;
+  is_deleted: boolean;
+  refered_by: number | null;
+}
+
+interface ApiResponse {
   total: number;
   page: number;
-  per_page: number;
-  total_pages: number;
+  limit: number;
+  data: AlumniData[];
 }
 
 const COLUMNS = [
   { key: "index", label: "#", alwaysVisible: true },
-  { key: "name", label: "NAME", alwaysVisible: true },
-  { key: "usn", label: "USN", alwaysVisible: true },
-  { key: "batch", label: "BATCH" },
-  { key: "department", label: "DEPARTMENT" },
-  { key: "company", label: "COMPANY" },
-  { key: "designation", label: "DESIGNATION" },
-  { key: "location", label: "LOCATION" },
-  { key: "email", label: "EMAIL" },
-  { key: "phone", label: "CONTACT" },
+  { key: "full_name", label: "NAME", alwaysVisible: true },
+  { key: "graduation_year", label: "BATCH", alwaysVisible: true },
+  { key: "current_company", label: "COMPANY" },
+  { key: "current_designation", label: "DESIGNATION" },
+  { key: "current_work_location", label: "LOCATION" },
+  { key: "personal_email", label: "EMAIL" },
+  { key: "phone_number", label: "CONTACT" },
+  { key: "other_links", label: "LINKS" },
 ];
 
 function getInitials(name: string): string {
@@ -63,87 +81,131 @@ function getAvatarColor(name: string): string {
 
 export default function AlumniPage() {
   const router = useRouter();
-  const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
+
+  // API state
+  const [alumni, setAlumni] = useState<AlumniData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Pagination
-  const [page, setPage] = useState(1);
-  const [perPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [totalAlumni, setTotalAlumni] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  const limit = 50;
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBatch, setSelectedBatch] = useState<string>("all");
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
+  const [selectedLocation, setSelectedLocation] = useState<string>("all");
 
   // Column visibility
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    new Set(COLUMNS.map((c) => c.key))
+    new Set([
+      "index",
+      "full_name",
+      "graduation_year",
+      "current_company",
+      "current_designation",
+      "current_work_location",
+      "personal_email",
+    ])
   );
 
-  // Unique filter values
-  const [batches, setBatches] = useState<string[]>([]);
-  const [departments, setDepartments] = useState<string[]>([]);
-  const [companies, setCompanies] = useState<string[]>([]);
-
+  // Fetch alumni data
   useEffect(() => {
+    const fetchAlumni = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/alumni/all?page=${currentPage}&limit=${limit}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch alumni data");
+        }
+
+        const data: ApiResponse = await response.json();
+        setAlumni(data.data);
+        setTotalAlumni(data.total);
+        setTotalPages(Math.ceil(data.total / data.limit));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchAlumni();
-  }, [page, selectedBatch, selectedDepartment, selectedCompany, searchQuery]);
+  }, [currentPage]);
 
-  const fetchAlumni = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        per_page: perPage.toString(),
-      });
+  // Unique filter values
+  const batches = useMemo(() => {
+    return [
+      ...new Set(
+        alumni
+          .map((a) => a.graduation_year)
+          .filter((year): year is number => year !== null)
+      ),
+    ].sort((a, b) => b - a);
+  }, [alumni]);
 
-      if (searchQuery) params.append("search", searchQuery);
-      if (selectedBatch !== "all") params.append("batch", selectedBatch);
-      if (selectedDepartment !== "all") params.append("department", selectedDepartment);
-      if (selectedCompany !== "all") params.append("company", selectedCompany);
+  const companies = useMemo(() => {
+    return [
+      ...new Set(
+        alumni
+          .map((a) => a.current_company)
+          .filter((company): company is string => company !== null)
+      ),
+    ].sort();
+  }, [alumni]);
 
-      const response = await api.get<AlumniResponse>(
-        `/placement/alumni?${params.toString()}`
-      );
+  const locations = useMemo(() => {
+    return [
+      ...new Set(
+        alumni
+          .map((a) => a.current_work_location)
+          .filter((location): location is string => location !== null)
+      ),
+    ].sort();
+  }, [alumni]);
 
-      setAlumni(response.data.alumni);
-      setTotalAlumni(response.data.total);
-      setTotalPages(response.data.total_pages);
+  const filteredAlumni = useMemo(() => {
+    return alumni.filter((alumniItem) => {
+      const matchesSearch =
+        alumniItem.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (alumniItem.usn?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (alumniItem.current_company?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (alumniItem.current_designation?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (alumniItem.personal_email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
 
-      // Extract unique filter values
-      if (batches.length === 0) {
-        const uniqueBatches = [
-          ...new Set(response.data.alumni.map((a) => a.batch)),
-        ].filter(Boolean).sort().reverse();
-        setBatches(uniqueBatches);
-      }
-      if (departments.length === 0) {
-        const uniqueDepartments = [
-          ...new Set(response.data.alumni.map((a) => a.department)),
-        ].filter(Boolean);
-        setDepartments(uniqueDepartments);
-      }
-      if (companies.length === 0) {
-        const uniqueCompanies = [
-          ...new Set(response.data.alumni.map((a) => a.currentEmployment.company)),
-        ].filter(Boolean).sort();
-        setCompanies(uniqueCompanies);
-      }
-    } catch (err) {
-      console.error("Failed to fetch alumni:", err);
-      setError("Failed to load alumni. Please try again.");
-    } finally {
-      setLoading(false);
+      const matchesBatch =
+        selectedBatch === "all" || alumniItem.graduation_year?.toString() === selectedBatch;
+
+      const matchesCompany =
+        selectedCompany === "all" || alumniItem.current_company === selectedCompany;
+
+      const matchesLocation =
+        selectedLocation === "all" || alumniItem.current_work_location === selectedLocation;
+
+      return matchesSearch && matchesBatch && matchesCompany && matchesLocation;
+    });
+  }, [alumni, searchQuery, selectedBatch, selectedCompany, selectedLocation]);
+
+  const handleAlumniClick = (userId: number | null) => {
+    if (userId) {
+      router.push(`/placement/alumni/${userId}`);
     }
-  };
-
-  const handleAlumniClick = (usn: string) => {
-    router.push(`/alumni/${usn}`);
   };
 
   const toggleColumn = (key: string) => {
@@ -166,14 +228,18 @@ export default function AlumniPage() {
       .map((c) => c.label)
       .join(",");
 
-    const rows = alumni.map((alum, index) =>
+    const rows = filteredAlumni.map((alumniItem, index) =>
       COLUMNS.filter((c) => visibleColumns.has(c.key))
         .map((c) => {
-          if (c.key === "index") return (page - 1) * perPage + index + 1;
-          if (c.key === "company") return `"${alum.currentEmployment.company}"`;
-          if (c.key === "designation") return `"${alum.currentEmployment.designation}"`;
-          if (c.key === "location") return `"${alum.currentEmployment.location}"`;
-          return `"${alum[c.key as keyof AlumniProfile] || ""}"`;
+          if (c.key === "index") return index + 1;
+          if (c.key === "other_links") {
+            const links = [];
+            if (alumniItem.other_links?.linkedin) links.push(`LinkedIn: ${alumniItem.other_links.linkedin}`);
+            if (alumniItem.other_links?.github) links.push(`GitHub: ${alumniItem.other_links.github}`);
+            return `"${links.join("; ")}"`;
+          }
+          const value = alumniItem[c.key as keyof AlumniData];
+          return `"${value !== null && value !== undefined ? value : ""}"`;
         })
         .join(",")
     );
@@ -183,43 +249,50 @@ export default function AlumniPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "alumni.csv";
+    a.download = `alumni_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const startIndex = (page - 1) * perPage + 1;
-  const endIndex = Math.min(page * perPage, totalAlumni);
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedBatch("all");
+    setSelectedCompany("all");
+    setSelectedLocation("all");
+  };
+
+  const activeFiltersCount = [
+    selectedBatch !== "all",
+    selectedCompany !== "all",
+    selectedLocation !== "all",
+  ].filter(Boolean).length;
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Alumni</h1>
 
+      {/* Search Bar */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/50" />
+        <input
+          type="text"
+          placeholder="Search by name, company, designation, email..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="input input-bordered w-full pl-10"
+        />
+      </div>
+
       {/* Filters Row */}
       <div className="flex flex-wrap items-center gap-4">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/50" />
-          <input
-            type="text"
-            placeholder="Search alumni..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setPage(1);
-            }}
-            className="input input-bordered w-full pl-10"
-          />
-        </div>
-
         {/* Batch Filter */}
         <div className="dropdown">
           <div
             tabIndex={0}
             role="button"
-            className="btn btn-outline gap-2 min-w-[140px] justify-between"
+            className={`btn btn-outline gap-2 min-w-[140px] justify-between ${selectedBatch !== "all" ? "btn-primary" : ""}`}
           >
-            {selectedBatch === "all" ? "All Batches" : selectedBatch}
+            {selectedBatch === "all" ? "Batch" : selectedBatch}
             <ChevronDown className="h-4 w-4" />
           </div>
           <ul
@@ -228,10 +301,7 @@ export default function AlumniPage() {
           >
             <li>
               <a
-                onClick={() => {
-                  setSelectedBatch("all");
-                  setPage(1);
-                }}
+                onClick={() => setSelectedBatch("all")}
                 className={selectedBatch === "all" ? "active" : ""}
               >
                 All Batches
@@ -240,54 +310,10 @@ export default function AlumniPage() {
             {batches.map((batch) => (
               <li key={batch}>
                 <a
-                  onClick={() => {
-                    setSelectedBatch(batch);
-                    setPage(1);
-                  }}
-                  className={selectedBatch === batch ? "active" : ""}
+                  onClick={() => setSelectedBatch(batch.toString())}
+                  className={selectedBatch === batch.toString() ? "active" : ""}
                 >
                   {batch}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Department Filter */}
-        <div className="dropdown">
-          <div
-            tabIndex={0}
-            role="button"
-            className="btn btn-outline gap-2 min-w-[160px] justify-between"
-          >
-            {selectedDepartment === "all" ? "All Departments" : selectedDepartment.slice(0, 15) + "..."}
-            <ChevronDown className="h-4 w-4" />
-          </div>
-          <ul
-            tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-72 max-h-60 overflow-y-auto"
-          >
-            <li>
-              <a
-                onClick={() => {
-                  setSelectedDepartment("all");
-                  setPage(1);
-                }}
-                className={selectedDepartment === "all" ? "active" : ""}
-              >
-                All Departments
-              </a>
-            </li>
-            {departments.map((dept) => (
-              <li key={dept}>
-                <a
-                  onClick={() => {
-                    setSelectedDepartment(dept);
-                    setPage(1);
-                  }}
-                  className={selectedDepartment === dept ? "active" : ""}
-                >
-                  {dept}
                 </a>
               </li>
             ))}
@@ -299,21 +325,18 @@ export default function AlumniPage() {
           <div
             tabIndex={0}
             role="button"
-            className="btn btn-outline gap-2 min-w-[150px] justify-between"
+            className={`btn btn-outline gap-2 min-w-[150px] justify-between ${selectedCompany !== "all" ? "btn-primary" : ""}`}
           >
-            {selectedCompany === "all" ? "All Companies" : selectedCompany}
+            {selectedCompany === "all" ? "Company" : selectedCompany.length > 15 ? selectedCompany.substring(0, 15) + "..." : selectedCompany}
             <ChevronDown className="h-4 w-4" />
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-52 max-h-60 overflow-y-auto"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-64 max-h-60 overflow-y-auto"
           >
             <li>
               <a
-                onClick={() => {
-                  setSelectedCompany("all");
-                  setPage(1);
-                }}
+                onClick={() => setSelectedCompany("all")}
                 className={selectedCompany === "all" ? "active" : ""}
               >
                 All Companies
@@ -322,10 +345,7 @@ export default function AlumniPage() {
             {companies.map((company) => (
               <li key={company}>
                 <a
-                  onClick={() => {
-                    setSelectedCompany(company);
-                    setPage(1);
-                  }}
+                  onClick={() => setSelectedCompany(company)}
                   className={selectedCompany === company ? "active" : ""}
                 >
                   {company}
@@ -334,6 +354,48 @@ export default function AlumniPage() {
             ))}
           </ul>
         </div>
+
+        {/* Location Filter */}
+        <div className="dropdown">
+          <div
+            tabIndex={0}
+            role="button"
+            className={`btn btn-outline gap-2 min-w-[140px] justify-between ${selectedLocation !== "all" ? "btn-primary" : ""}`}
+          >
+            {selectedLocation === "all" ? "Location" : selectedLocation}
+            <ChevronDown className="h-4 w-4" />
+          </div>
+          <ul
+            tabIndex={0}
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-52 max-h-60 overflow-y-auto"
+          >
+            <li>
+              <a
+                onClick={() => setSelectedLocation("all")}
+                className={selectedLocation === "all" ? "active" : ""}
+              >
+                All Locations
+              </a>
+            </li>
+            {locations.map((location) => (
+              <li key={location}>
+                <a
+                  onClick={() => setSelectedLocation(location)}
+                  className={selectedLocation === location ? "active" : ""}
+                >
+                  {location}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Clear Filters */}
+        {activeFiltersCount > 0 && (
+          <button onClick={clearFilters} className="btn btn-ghost gap-2">
+            Clear Filters ({activeFiltersCount})
+          </button>
+        )}
 
         <div className="flex-1" />
 
@@ -349,7 +411,7 @@ export default function AlumniPage() {
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-52"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-60 max-h-96 overflow-y-auto"
           >
             {COLUMNS.map((column) => (
               <li key={column.key}>
@@ -375,147 +437,203 @@ export default function AlumniPage() {
         </button>
       </div>
 
-      {/* Table */}
-      <div className="border border-base-300 rounded-lg overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <span className="loading loading-spinner loading-lg"></span>
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center py-20 text-error">
-            {error}
-          </div>
-        ) : alumni.length === 0 ? (
-          <div className="flex items-center justify-center py-20 text-base-content/60">
-            No alumni found
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-base-200">
-                {COLUMNS.filter((c) => visibleColumns.has(c.key)).map(
-                  (column) => (
-                    <TableHead
-                      key={column.key}
-                      className="font-semibold text-base-content"
-                    >
-                      {column.label}
-                    </TableHead>
-                  )
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {alumni.map((alum, index) => (
-                <TableRow
-                  key={alum.id}
-                  className="cursor-pointer hover:bg-base-200/50"
-                  onClick={() => handleAlumniClick(alum.id)}
-                >
-                  {visibleColumns.has("index") && (
-                    <TableCell className="text-base-content/60">
-                      {(page - 1) * perPage + index + 1}
-                    </TableCell>
-                  )}
-                  {visibleColumns.has("name") && (
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium ${getAvatarColor(alum.name)}`}
-                        >
-                          {alum.photo ? (
-                            <img
-                              src={alum.photo}
-                              alt={alum.name}
-                              className="w-full h-full rounded-full object-cover"
-                            />
-                          ) : (
-                            getInitials(alum.name)
-                          )}
-                        </div>
-                        <span className="font-medium">{alum.name}</span>
-                      </div>
-                    </TableCell>
-                  )}
-                  {visibleColumns.has("usn") && (
-                    <TableCell>
-                      <span className="badge badge-secondary badge-sm font-mono">
-                        {alum.id}
-                      </span>
-                    </TableCell>
-                  )}
-                  {visibleColumns.has("batch") && (
-                    <TableCell>
-                      <span className="badge badge-ghost badge-sm">
-                        {alum.batch}
-                      </span>
-                    </TableCell>
-                  )}
-                  {visibleColumns.has("department") && (
-                    <TableCell className="max-w-[200px] truncate" title={alum.department}>
-                      {alum.department}
-                    </TableCell>
-                  )}
-                  {visibleColumns.has("company") && (
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-base-content/50" />
-                        <span className="font-medium text-primary">
-                          {alum.currentEmployment.company}
-                        </span>
-                      </div>
-                    </TableCell>
-                  )}
-                  {visibleColumns.has("designation") && (
-                    <TableCell>{alum.currentEmployment.designation}</TableCell>
-                  )}
-                  {visibleColumns.has("location") && (
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-base-content/70">
-                        <MapPin className="h-3 w-3" />
-                        {alum.currentEmployment.location}
-                      </div>
-                    </TableCell>
-                  )}
-                  {visibleColumns.has("email") && (
-                    <TableCell className="text-primary">
-                      {alum.email}
-                    </TableCell>
-                  )}
-                  {visibleColumns.has("phone") && (
-                    <TableCell>{alum.phone || "-"}</TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
-
-      {/* Pagination */}
-      {!loading && !error && totalAlumni > 0 && (
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-base-content/60">
-            Showing {startIndex} to {endIndex} of {totalAlumni} entries
-          </span>
-          <div className="join">
-            <button
-              className="join-item btn btn-sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              Previous
-            </button>
-            <button
-              className="join-item btn btn-sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              Next
-            </button>
-          </div>
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <span className="loading loading-spinner loading-lg"></span>
         </div>
       )}
+
+      {/* Error State */}
+      {error && (
+        <div className="alert alert-error shadow-lg">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="stroke-current shrink-0 h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Table */}
+      {!loading && !error && (
+        <div className="border border-base-300 rounded-lg overflow-x-auto">
+          {filteredAlumni.length === 0 ? (
+            <div className="flex items-center justify-center py-20 text-base-content/60">
+              <div className="text-center">
+                <p className="text-lg font-medium mb-2">No alumni found</p>
+                <p className="text-sm">Try adjusting your search or filters</p>
+              </div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-base-200">
+                  {COLUMNS.filter((c) => visibleColumns.has(c.key)).map(
+                    (column) => (
+                      <TableHead
+                        key={column.key}
+                        className="font-semibold text-base-content whitespace-nowrap"
+                      >
+                        {column.label}
+                      </TableHead>
+                    )
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAlumni.map((alumniItem, index) => (
+                  <TableRow
+                    key={alumniItem.id}
+                    className="cursor-pointer hover:bg-base-200/50"
+                    onClick={() => handleAlumniClick(alumniItem.user_id)}
+                  >
+                    {visibleColumns.has("index") && (
+                      <TableCell className="text-base-content/60">
+                        {(currentPage - 1) * limit + index + 1}
+                      </TableCell>
+                    )}
+                    {visibleColumns.has("full_name") && (
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium ${getAvatarColor(alumniItem.full_name)}`}
+                          >
+                            {getInitials(alumniItem.full_name)}
+                          </div>
+                          <span className="font-medium whitespace-nowrap">
+                            {alumniItem.full_name}
+                          </span>
+                        </div>
+                      </TableCell>
+                    )}
+                    {visibleColumns.has("graduation_year") && (
+                      <TableCell>
+                        <span className="badge badge-ghost badge-sm">
+                          {alumniItem.graduation_year || "-"}
+                        </span>
+                      </TableCell>
+                    )}
+                    {visibleColumns.has("current_company") && (
+                      <TableCell>
+                        {alumniItem.current_company ? (
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-base-content/50" />
+                            <span className="font-medium text-primary">
+                              {alumniItem.current_company}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-base-content/60">-</span>
+                        )}
+                      </TableCell>
+                    )}
+                    {visibleColumns.has("current_designation") && (
+                      <TableCell>
+                        {alumniItem.current_designation || "-"}
+                      </TableCell>
+                    )}
+                    {visibleColumns.has("current_work_location") && (
+                      <TableCell>
+                        {alumniItem.current_work_location ? (
+                          <div className="flex items-center gap-1 text-base-content/70">
+                            <MapPin className="h-3 w-3" />
+                            {alumniItem.current_work_location}
+                          </div>
+                        ) : (
+                          <span className="text-base-content/60">-</span>
+                        )}
+                      </TableCell>
+                    )}
+                    {visibleColumns.has("personal_email") && (
+                      <TableCell className="text-primary max-w-xs truncate">
+                        {alumniItem.personal_email || "-"}
+                      </TableCell>
+                    )}
+                    {visibleColumns.has("phone_number") && (
+                      <TableCell>{alumniItem.phone_number || "-"}</TableCell>
+                    )}
+                    {visibleColumns.has("other_links") && (
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {alumniItem.other_links?.linkedin && (
+                            <a
+                              href={alumniItem.other_links.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="btn btn-ghost btn-xs"
+                            >
+                              <Linkedin className="h-4 w-4 text-blue-600" />
+                            </a>
+                          )}
+                          {alumniItem.other_links?.github && (
+                            <a
+                              href={alumniItem.other_links.github}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="btn btn-ghost btn-xs"
+                            >
+                              <Github className="h-4 w-4 text-base-content" />
+                            </a>
+                          )}
+                          {!alumniItem.other_links?.linkedin &&
+                            !alumniItem.other_links?.github && (
+                              <span className="text-base-content/60">-</span>
+                            )}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      )}
+
+      {/* Results Count and Pagination */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-base-content/60">
+          Showing {filteredAlumni.length} of {totalAlumni} alumni
+          {activeFiltersCount > 0 && ` (${activeFiltersCount} filter${activeFiltersCount > 1 ? 's' : ''} active)`}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="join">
+            <button
+              className="join-item btn"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              «
+            </button>
+            <button className="join-item btn">
+              Page {currentPage} of {totalPages}
+            </button>
+            <button
+              className="join-item btn"
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+            >
+              »
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
