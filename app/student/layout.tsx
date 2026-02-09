@@ -95,6 +95,9 @@ export default function StudentLayout({
                 <li>
                   <Link href="/student/policy">Policy</Link>
                 </li>
+                <li>
+                  <Link href="/student/placements">Placements</Link>
+                </li>
               </ul>
             </div>
 
@@ -121,6 +124,9 @@ export default function StudentLayout({
               </li>
               <li>
                 <Link href="/student/policy">Policy</Link>
+              </li>
+              <li>
+                <Link href="/student/placements">Placements</Link>
               </li>
             </ul>
           </div>

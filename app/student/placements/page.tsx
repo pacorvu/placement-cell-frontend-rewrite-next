@@ -10,7 +10,7 @@ import {
   type ExpandedState,
 } from "@tanstack/react-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { z } from "zod";
 import {
   CheckCircle,
@@ -57,16 +57,17 @@ const STATUS_CONFIG: Record<
   string,
   { badge: string; icon: React.FC<{ className?: string }> }
 > = {
-  PENDING: { badge: "badge-warning", icon: Clock },
-  APPROVED: { badge: "badge-success", icon: CheckCircle },
-  REJECTED: { badge: "badge-error", icon: XCircle },
-  NOT_STARTED: { badge: "badge-ghost", icon: Clock },
+  // PENDING: { badge: "badge-warning", icon: Clock },
+  // APPROVED: { badge: "badge-success", icon: CheckCircle },
+  // REJECTED: { badge: "badge-error", icon: XCircle },
+  // NOT_STARTED: { badge: "badge-ghost", icon: Clock },
   PASSED: { badge: "badge-success", icon: CheckCircle },
   FAILED: { badge: "badge-error", icon: XCircle },
-  SELECTED: { badge: "badge-success", icon: CheckCircle },
-  NOT_SELECTED: { badge: "badge-error", icon: XCircle },
-  REGISTERED: { badge: "badge-success", icon: UserCheck },
-  NOT_REGISTERED: { badge: "badge-ghost", icon: UserX },
+  ABSENT: { badge: "badge-ghost", icon: XCircle },  // ADD THIS
+  // SELECTED: { badge: "badge-success", icon: CheckCircle },
+  // NOT_SELECTED: { badge: "badge-error", icon: XCircle },
+  // REGISTERED: { badge: "badge-success", icon: UserCheck },
+  // NOT_REGISTERED: { badge: "badge-ghost", icon: UserX },
 };
 
 function formatStatus(status: string): string {
@@ -74,7 +75,7 @@ function formatStatus(status: string): string {
 }
 
 function isRegistered(record: PlacementRecord): boolean {
-  return record.registration_status === "REGISTERED";
+  return record.registration_status === "PASSED";
 }
 
 // ==================== COLUMN HELPER ====================
@@ -458,7 +459,7 @@ export default function PlacementProcessTable() {
                   </thead>
                   <tbody>
                     {table.getRowModel().rows.map((row) => (
-                      <>
+                      <Fragment key={row.id}>
                         {/* Main Row */}
                         <tr
                           key={row.id}
@@ -487,7 +488,7 @@ export default function PlacementProcessTable() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>
