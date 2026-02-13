@@ -521,7 +521,7 @@ export default function AlumniPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-[140px] justify-between ${selectedBatch !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-35 justify-between ${selectedBatch !== "all" ? "btn-primary" : ""}`}
           >
             {selectedBatch === "all" ? "Batch" : selectedBatch}
             <ChevronDown className="h-4 w-4" />
@@ -556,7 +556,7 @@ export default function AlumniPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-[150px] justify-between ${selectedCompany !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-37.5 justify-between ${selectedCompany !== "all" ? "btn-primary" : ""}`}
           >
             {selectedCompany === "all" ? "Company" : selectedCompany.length > 15 ? selectedCompany.substring(0, 15) + "..." : selectedCompany}
             <ChevronDown className="h-4 w-4" />
@@ -591,7 +591,7 @@ export default function AlumniPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-[140px] justify-between ${selectedLocation !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-35 justify-between ${selectedLocation !== "all" ? "btn-primary" : ""}`}
           >
             {selectedLocation === "all" ? "Location" : selectedLocation}
             <ChevronDown className="h-4 w-4" />

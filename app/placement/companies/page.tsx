@@ -274,7 +274,7 @@ export default function CompaniesPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-[160px] justify-between ${
+            className={`btn btn-outline gap-2 min-w-40 justify-between ${
               selectedType !== "all" ? "btn-primary" : ""
             }`}
           >

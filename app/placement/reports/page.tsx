@@ -183,7 +183,7 @@ export default function ReportsPage() {
           <div className="space-y-6">
             {!reportGenerated ? (
               // EMPTY STATE
-              <div className="bg-white rounded-lg border-2 border-dashed border-slate-300 min-h-[500px] flex flex-col items-center justify-center text-slate-400">
+              <div className="bg-white rounded-lg border-2 border-dashed border-slate-300 min-h-125 flex flex-col items-center justify-center text-slate-400">
                 <FileText className="w-20 h-20 mb-4 text-slate-300" strokeWidth={1.5} />
                 <p className="text-base font-medium text-slate-400">
                   Select options and click Generate Report

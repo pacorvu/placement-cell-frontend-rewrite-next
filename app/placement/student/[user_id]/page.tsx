@@ -538,7 +538,7 @@ export default function StudentPage({ params }: StudentPageProps) {
                     }
                   />
                 ) : (
-                  <div className="bg-gradient-to-br from-primary to-secondary text-primary-content flex items-center justify-center text-4xl font-bold">
+                  <div className="bg-linear-to-br from-primary to-secondary text-primary-content flex items-center justify-center text-4xl font-bold">
                     {getInitials(displayData.personal_details?.full_name || "")}
                   </div>
                 )}
@@ -612,7 +612,7 @@ export default function StudentPage({ params }: StudentPageProps) {
                 </h2>
                 <div className="space-y-4 mt-4">
                   <div className="flex items-start gap-3">
-                    <Mail className="h-5 w-5 text-base-content/60 mt-0.5 flex-shrink-0" />
+                    <Mail className="h-5 w-5 text-base-content/60 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-base-content/60 mb-1">Personal Email</p>
                       {isEditing ? (
@@ -637,7 +637,7 @@ export default function StudentPage({ params }: StudentPageProps) {
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <Phone className="h-5 w-5 text-base-content/60 mt-0.5 flex-shrink-0" />
+                    <Phone className="h-5 w-5 text-base-content/60 mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <p className="text-xs text-base-content/60 mb-1">Phone</p>
                       {isEditing ? (
@@ -659,7 +659,7 @@ export default function StudentPage({ params }: StudentPageProps) {
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <Languages className="h-5 w-5 text-base-content/60 mt-0.5 flex-shrink-0" />
+                    <Languages className="h-5 w-5 text-base-content/60 mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <p className="text-xs text-base-content/60 mb-1">Languages</p>
                       {isEditing ? (
@@ -725,7 +725,7 @@ export default function StudentPage({ params }: StudentPageProps) {
                                   [key]: e.target.value,
                                 });
                               }}
-                              className="input input-bordered input-sm flex-[2]"
+                              className="input input-bordered input-sm flex-2"
                               placeholder="URL"
                             />
                             <button
@@ -766,9 +766,9 @@ export default function StudentPage({ params }: StudentPageProps) {
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 text-sm link link-primary p-2 hover:bg-base-300 rounded-lg transition-colors"
                           >
-                            <Link2 className="h-4 w-4 flex-shrink-0" />
+                            <Link2 className="h-4 w-4 shrink-0" />
                             <span className="capitalize truncate">{key}</span>
-                            <ExternalLink className="h-3 w-3 ml-auto flex-shrink-0" />
+                            <ExternalLink className="h-3 w-3 ml-auto shrink-0" />
                           </a>
                         ))}
                       {Object.keys(displayData.profile_communication?.links || {}).length === 0 && (
@@ -1300,11 +1300,11 @@ export default function StudentPage({ params }: StudentPageProps) {
                         </div>
                         <div className="flex items-center gap-4 text-sm text-base-content/60 mb-3 flex-wrap">
                           <span className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4 flex-shrink-0" />
+                            <Calendar className="h-4 w-4 shrink-0" />
                             {formatDate(internship.start_date)} - {formatDate(internship.end_date)}
                           </span>
                           <span className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4 flex-shrink-0" />
+                            <MapPin className="h-4 w-4 shrink-0" />
                             {internship.location || "N/A"}
                           </span>
                         </div>
@@ -1626,12 +1626,12 @@ export default function StudentPage({ params }: StudentPageProps) {
                           </p>
                           <div className="flex items-center gap-4 text-sm text-base-content/60 mb-3 flex-wrap">
                             <span className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4 flex-shrink-0" />
+                              <Calendar className="h-4 w-4 shrink-0" />
                               {formatDate(exp.start_date)} -{" "}
                               {exp.end_date ? formatDate(exp.end_date) : "Present"}
                             </span>
                             <span className="flex items-center gap-1">
-                              <MapPin className="h-4 w-4 flex-shrink-0" />
+                              <MapPin className="h-4 w-4 shrink-0" />
                               {exp.location || "N/A"}
                             </span>
                           </div>

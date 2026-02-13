@@ -497,7 +497,7 @@ export default function AlumniProjectsPage() {
                           className="w-full h-full object-contain"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/30 to-secondary/30">
+                        <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-primary/30 to-secondary/30">
                           <span className="text-8xl font-bold text-white/60">
                             {getInitials(selectedProject.usn)}
                           </span>

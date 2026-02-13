@@ -274,7 +274,7 @@ export default function Events() {
         header: "Details",
         enableSorting: false,
         cell: ({ getValue }) => (
-          <span className="opacity-60 text-sm max-w-[200px] block truncate">
+          <span className="opacity-60 text-sm max-w-50 block truncate">
             {getValue() || "—"}
           </span>
         ),
