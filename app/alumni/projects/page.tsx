@@ -214,17 +214,15 @@ export default function AlumniProjectsPage() {
               </button>
               <div className="h-8 w-px bg-base-300 mx-2"></div>
               <div className="bg-base-200 px-4 py-2 text-sm font-medium">
-                <span className="font-bold text-primary">
-                  {totalProjects}
+                <span className="font-bold text-primary">{totalProjects}</span>
+                <span className="text-base-content/60 ml-1.5">
+                  total projects
                 </span>
-                <span className="text-base-content/60 ml-1.5">total projects</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-
 
       {/* Main Content */}
       <div className="max-w-450 mx-auto px-6 py-8">
@@ -275,7 +273,7 @@ export default function AlumniProjectsPage() {
                   {/* Thumbnail - SQUARE */}
                   <div className="relative aspect-video overflow-hidden bg-base-300 mb-3 shadow-lg">
                     {project.snaps_signed_urls &&
-                      project.snaps_signed_urls.length > 0 ? (
+                    project.snaps_signed_urls.length > 0 ? (
                       <>
                         <img
                           src={project.snaps_signed_urls[0]}
@@ -345,7 +343,8 @@ export default function AlumniProjectsPage() {
             {totalPages > 1 && (
               <div className="flex flex-col items-center gap-4 mt-12">
                 <div className="text-sm text-base-content/60">
-                  Page {currentPage} of {totalPages} ({totalProjects} total projects)
+                  Page {currentPage} of {totalPages} ({totalProjects} total
+                  projects)
                 </div>
                 <div className="join shadow-lg">
                   <button
@@ -454,8 +453,9 @@ export default function AlumniProjectsPage() {
         >
           <div className="min-h-screen py-8 px-4">
             <div className="max-w-7xl mx-auto">
-              {/* Close Button - SQUARE */}
-              <div className="flex justify-end mb-4">
+              {/* Top Bar - Close  */}
+              <div className="flex justify-end gap-3 mb-4">
+                {/* Close Button */}
                 <button
                   onClick={() => {
                     setSelectedProject(null);
@@ -488,7 +488,7 @@ export default function AlumniProjectsPage() {
                     {/* Main Image */}
                     <div className="relative bg-black aspect-video">
                       {selectedProject.snaps_signed_urls &&
-                        selectedProject.snaps_signed_urls.length > 0 ? (
+                      selectedProject.snaps_signed_urls.length > 0 ? (
                         <img
                           src={
                             selectedProject.snaps_signed_urls[currentImageIndex]
@@ -497,7 +497,7 @@ export default function AlumniProjectsPage() {
                           className="w-full h-full object-contain"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-primary/30 to-secondary/30">
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/30 to-secondary/30">
                           <span className="text-8xl font-bold text-white/60">
                             {getInitials(selectedProject.usn)}
                           </span>
@@ -514,7 +514,7 @@ export default function AlumniProjectsPage() {
                                 setCurrentImageIndex((prev) =>
                                   prev === 0
                                     ? selectedProject.snaps_signed_urls.length -
-                                    1
+                                      1
                                     : prev - 1,
                                 );
                               }}
@@ -540,7 +540,7 @@ export default function AlumniProjectsPage() {
                                 e.stopPropagation();
                                 setCurrentImageIndex((prev) =>
                                   prev ===
-                                    selectedProject.snaps_signed_urls.length - 1
+                                  selectedProject.snaps_signed_urls.length - 1
                                     ? 0
                                     : prev + 1,
                                 );
@@ -583,10 +583,11 @@ export default function AlumniProjectsPage() {
                                     e.stopPropagation();
                                     setCurrentImageIndex(index);
                                   }}
-                                  className={`shrink-0 w-28 h-20 overflow-hidden border-3 transition-all ${currentImageIndex === index
-                                    ? "border-primary shadow-lg scale-105"
-                                    : "border-base-300 opacity-60 hover:opacity-100 hover:scale-105"
-                                    }`}
+                                  className={`shrink-0 w-28 h-20 overflow-hidden border-3 transition-all ${
+                                    currentImageIndex === index
+                                      ? "border-primary shadow-lg scale-105"
+                                      : "border-base-300 opacity-60 hover:opacity-100 hover:scale-105"
+                                  }`}
                                 >
                                   <img
                                     src={url}
@@ -753,7 +754,11 @@ export default function AlumniProjectsPage() {
                         <div className="flex items-center justify-between p-3 bg-base-100">
                           <span className="text-sm">Link Status</span>
                           <span
-                            className={`badge rounded-none ${selectedProject.project_link ? "badge-success" : "badge-ghost"}`}
+                            className={`badge rounded-none ${
+                              selectedProject.project_link
+                                ? "badge-success"
+                                : "badge-ghost"
+                            }`}
                           >
                             {selectedProject.project_link ? "Available" : "N/A"}
                           </span>
