@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ChevronDown, Search, Columns3, Download, Building2, MapPin, Github, Linkedin } from "lucide-react";
+import { ChevronDown, Search, Columns3, Download, Building2, MapPin, Github, Linkedin, Plus, Upload, FileDown } from "lucide-react";
 
 interface AlumniData {
   id: number;
@@ -39,6 +39,19 @@ interface ApiResponse {
   page: number;
   limit: number;
   data: AlumniData[];
+}
+
+interface AlumniFormData {
+  usn: string;
+  full_name: string;
+  graduation_year: number | null;
+  current_company: string;
+  current_designation: string;
+  current_work_location: string;
+  personal_email: string;
+  phone_number: string;
+  other_links: any;
+  refered_by: string;
 }
 
 const COLUMNS = [
@@ -109,6 +122,27 @@ export default function AlumniPage() {
       "personal_email",
     ])
   );
+
+  // Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [otherLinksInput, setOtherLinksInput] = useState<string>("{}");
+  
+  const [formData, setFormData] = useState<AlumniFormData>({
+    usn: "",
+    full_name: "",
+    graduation_year: null,
+    current_company: "",
+    current_designation: "",
+    current_work_location: "",
+    personal_email: "",
+    phone_number: "",
+    other_links: {},
+    refered_by: "",
+  });
 
   // Fetch alumni data
   useEffect(() => {
@@ -267,9 +301,206 @@ export default function AlumniPage() {
     selectedLocation !== "all",
   ].filter(Boolean).length;
 
+  const handleAddAlumni = async () => {
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      let parsedLinks = {};
+      try {
+        parsedLinks = JSON.parse(otherLinksInput);
+      } catch {
+        throw new Error("Invalid JSON format for other links");
+      }
+
+      const submitData = {
+        ...formData,
+        other_links: parsedLinks,
+        graduation_year: formData.graduation_year || undefined,
+      };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/alumni/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(submitData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to add alumni");
+      }
+
+      // Show success toast
+      const toastDiv = document.createElement("div");
+      toastDiv.className = "toast toast-top toast-center";
+      toastDiv.innerHTML = `
+        <div class="alert alert-success">
+          <span>Alumni added successfully!</span>
+        </div>
+      `;
+      document.body.appendChild(toastDiv);
+      setTimeout(() => toastDiv.remove(), 5000);
+
+      // Reset form and close modal
+      setFormData({
+        usn: "",
+        full_name: "",
+        graduation_year: null,
+        current_company: "",
+        current_designation: "",
+        current_work_location: "",
+        personal_email: "",
+        phone_number: "",
+        other_links: {},
+        refered_by: "",
+      });
+      setOtherLinksInput("{}");
+      setShowAddModal(false);
+
+      // Refresh data
+      window.location.reload();
+    } catch (err) {
+      const toastDiv = document.createElement("div");
+      toastDiv.className = "toast toast-top toast-center";
+      toastDiv.innerHTML = `
+        <div class="alert alert-error">
+          <span>${err instanceof Error ? err.message : "Failed to add alumni"}</span>
+        </div>
+      `;
+      document.body.appendChild(toastDiv);
+      setTimeout(() => toastDiv.remove(), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/alumni/bulk-upload/template`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to download template");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "alumni_bulk_upload_template.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to download template");
+    }
+  };
+
+  const handleBulkUpload = async () => {
+    if (!selectedFile) {
+      alert("Please select a file to upload");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/alumni/bulk-upload/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to upload file");
+      }
+
+      const toastDiv = document.createElement("div");
+      toastDiv.className = "toast toast-top toast-center";
+      toastDiv.innerHTML = `
+        <div class="alert alert-success">
+          <span>Bulk upload successful!</span>
+        </div>
+      `;
+      document.body.appendChild(toastDiv);
+      setTimeout(() => toastDiv.remove(), 3000);
+
+      setSelectedFile(null);
+      setShowBulkUploadModal(false);
+      window.location.reload();
+    } catch (err) {
+      const toastDiv = document.createElement("div");
+      toastDiv.className = "toast toast-top toast-center";
+      toastDiv.innerHTML = `
+        <div class="alert alert-error">
+          <span>${err instanceof Error ? err.message : "Failed to upload file"}</span>
+        </div>
+      `;
+      document.body.appendChild(toastDiv);
+      setTimeout(() => toastDiv.remove(), 3000);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Alumni</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Alumni</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="btn btn-primary gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Alumni
+          </button>
+          <button
+            onClick={handleDownloadTemplate}
+            className="btn btn-outline gap-2"
+          >
+            <FileDown className="h-4 w-4" />
+            Download Template
+          </button>
+          <button
+            onClick={() => setShowBulkUploadModal(true)}
+            className="btn btn-outline gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Bulk Upload
+          </button>
+        </div>
+      </div>
 
       {/* Search Bar */}
       <div className="relative max-w-md">
@@ -634,6 +865,274 @@ export default function AlumniPage() {
           </div>
         )}
       </div>
+
+      {/* Add Alumni Modal */}
+      {showAddModal && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="font-bold text-lg mb-4">Add New Alumni</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Full Name *</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.full_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, full_name: e.target.value })
+                    }
+                    className="input input-bordered"
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">USN</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.usn}
+                    onChange={(e) =>
+                      setFormData({ ...formData, usn: e.target.value })
+                    }
+                    className="input input-bordered"
+                    placeholder="1RV21CS001"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Graduation Year</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.graduation_year || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        graduation_year: e.target.value
+                          ? parseInt(e.target.value)
+                          : null,
+                      })
+                    }
+                    className="input input-bordered"
+                    placeholder="2024"
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Email *</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.personal_email}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        personal_email: e.target.value,
+                      })
+                    }
+                    className="input input-bordered"
+                    placeholder="john@example.com"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Phone Number</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone_number}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone_number: e.target.value })
+                    }
+                    className="input input-bordered"
+                    placeholder="+91 9876543210"
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Current Company</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.current_company}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        current_company: e.target.value,
+                      })
+                    }
+                    className="input input-bordered"
+                    placeholder="Google"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Current Designation</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.current_designation}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        current_designation: e.target.value,
+                      })
+                    }
+                    className="input input-bordered"
+                    placeholder="Software Engineer"
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Work Location</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.current_work_location}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        current_work_location: e.target.value,
+                      })
+                    }
+                    className="input input-bordered"
+                    placeholder="Bangalore"
+                  />
+                </div>
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Referred By</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.refered_by}
+                  onChange={(e) =>
+                    setFormData({ ...formData, refered_by: e.target.value })
+                  }
+                  className="input input-bordered"
+                  placeholder="Name of referrer"
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">
+                    Other Links (JSON format)
+                  </span>
+                </label>
+                <textarea
+                  value={otherLinksInput}
+                  onChange={(e) => setOtherLinksInput(e.target.value)}
+                  className="textarea textarea-bordered font-mono text-xs"
+                  rows={4}
+                  placeholder='{"linkedin": "https://linkedin.com/in/username", "github": "https://github.com/username"}'
+                />
+              </div>
+            </div>
+
+            <div className="modal-action">
+              <button
+                onClick={() => setShowAddModal(false)}
+                disabled={isSaving}
+                className="btn btn-ghost"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddAlumni}
+                disabled={isSaving || !formData.full_name}
+                className="btn btn-primary"
+              >
+                {isSaving ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  "Add Alumni"
+                )}
+              </button>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => !isSaving && setShowAddModal(false)}
+          ></div>
+        </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {showBulkUploadModal && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Bulk Upload Alumni</h3>
+            <div className="space-y-4">
+              <p className="text-sm text-base-content/60">
+                Upload an Excel file with alumni data. Make sure to use the
+                provided template format.
+              </p>
+              <div className="form-control">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) =>
+                    setSelectedFile(e.target.files?.[0] || null)
+                  }
+                  className="file-input file-input-bordered w-full"
+                />
+              </div>
+              {selectedFile && (
+                <div className="alert alert-info">
+                  <span className="text-sm">
+                    Selected: {selectedFile.name}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-action">
+              <button
+                onClick={() => {
+                  setShowBulkUploadModal(false);
+                  setSelectedFile(null);
+                }}
+                disabled={isUploading}
+                className="btn btn-ghost"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkUpload}
+                disabled={isUploading || !selectedFile}
+                className="btn btn-primary"
+              >
+                {isUploading ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  "Upload"
+                )}
+              </button>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => !isUploading && setShowBulkUploadModal(false)}
+          ></div>
+        </div>
+      )}
     </div>
   );
 }

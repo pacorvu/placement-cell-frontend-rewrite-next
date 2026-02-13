@@ -113,7 +113,6 @@ export default function StudentsPage() {
   const [selectedGender, setSelectedGender] = useState<string>("all");
   const [selectedVerification, setSelectedVerification] = useState<string>("all");
   const [showSpeciallyAbled, setShowSpeciallyAbled] = useState<string>("all");
-
   // Column visibility
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set([
@@ -258,8 +257,8 @@ export default function StudentsPage() {
   }, [students, searchQuery, selectedSchool, selectedProgram, selectedSpecialization, 
       selectedBatch, selectedGender, selectedVerification, showSpeciallyAbled]);
 
-  const handleStudentClick = (usn: string) => {
-    router.push(`/placement/student/${usn}`);
+  const handleStudentClick = (user_id: string) => {
+    router.push(`/placement/student/${user_id}`);
   };
 
   const toggleColumn = (key: string) => {
@@ -663,7 +662,7 @@ export default function StudentsPage() {
                   <TableRow
                     key={student.usn}
                     className="cursor-pointer hover:bg-base-200/50"
-                    onClick={() => handleStudentClick(student.usn)}
+                    onClick={() => handleStudentClick( student.user_id?.toString()|| "0")}
                   >
                     {visibleColumns.has("index") && (
                       <TableCell className="text-base-content/60">
