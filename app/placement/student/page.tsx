@@ -21,7 +21,6 @@ interface Student {
   specially_abled: boolean;
   languages: string[];
   personal_email: string | null;
-  verification_type: string | null;
   profile_image: string | null;
   profile_image_signed_url: string | null;
   school_name: string | null;
@@ -56,7 +55,6 @@ const COLUMNS = [
   { key: "personal_email", label: "PERSONAL EMAIL" },
   { key: "email", label: "INSTITUTE EMAIL" },
   { key: "languages", label: "LANGUAGES" },
-  { key: "verification_type", label: "VERIFICATION" },
   { key: "specially_abled", label: "SPECIALLY ABLED" },
   { key: "date_of_birth", label: "DOB" },
 ];
@@ -111,7 +109,6 @@ export default function StudentsPage() {
   const [selectedSpecialization, setSelectedSpecialization] = useState<string>("all");
   const [selectedBatch, setSelectedBatch] = useState<string>("all");
   const [selectedGender, setSelectedGender] = useState<string>("all");
-  const [selectedVerification, setSelectedVerification] = useState<string>("all");
   const [showSpeciallyAbled, setShowSpeciallyAbled] = useState<string>("all");
   // Column visibility
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
@@ -208,15 +205,6 @@ export default function StudentsPage() {
     return [...new Set(students.map((s) => s.gender))].sort();
   }, [students]);
 
-  const verificationTypes = useMemo(() => {
-    return [
-      ...new Set(
-        students
-          .map((s) => s.verification_type)
-          .filter((v): v is string => v !== null)
-      ),
-    ].sort();
-  }, [students]);
 
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
@@ -226,7 +214,10 @@ export default function StudentsPage() {
         (student.personal_email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
         (student.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
         (student.major_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-        (student.minor_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+        (student.minor_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (student.school_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (student.program_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (student.specialization_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
       
       const matchesSchool =
         selectedSchool === "all" || student.school_name === selectedSchool;
@@ -243,8 +234,6 @@ export default function StudentsPage() {
       const matchesGender =
         selectedGender === "all" || student.gender === selectedGender;
 
-      const matchesVerification =
-        selectedVerification === "all" || student.verification_type === selectedVerification;
 
       const matchesSpeciallyAbled =
         showSpeciallyAbled === "all" ||
@@ -252,10 +241,10 @@ export default function StudentsPage() {
         (showSpeciallyAbled === "no" && !student.specially_abled);
       
       return matchesSearch && matchesSchool && matchesProgram && matchesSpecialization && 
-             matchesBatch && matchesGender && matchesVerification && matchesSpeciallyAbled;
+             matchesBatch && matchesGender  && matchesSpeciallyAbled;
     });
   }, [students, searchQuery, selectedSchool, selectedProgram, selectedSpecialization, 
-      selectedBatch, selectedGender, selectedVerification, showSpeciallyAbled]);
+      selectedBatch, selectedGender, showSpeciallyAbled]);
 
   const handleStudentClick = (user_id: string) => {
     router.push(`/placement/student/${user_id}`);
@@ -314,7 +303,6 @@ export default function StudentsPage() {
     setSelectedSpecialization("all");
     setSelectedBatch("all");
     setSelectedGender("all");
-    setSelectedVerification("all");
     setShowSpeciallyAbled("all");
   };
 
@@ -324,7 +312,6 @@ export default function StudentsPage() {
     selectedSpecialization !== "all",
     selectedBatch !== "all",
     selectedGender !== "all",
-    selectedVerification !== "all",
     showSpeciallyAbled !== "all",
   ].filter(Boolean).length;
 
@@ -515,41 +502,6 @@ export default function StudentsPage() {
                   className={selectedGender === gender ? "active" : ""}
                 >
                   {gender}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Verification Filter */}
-        <div className="dropdown">
-          <div
-            tabIndex={0}
-            role="button"
-            className={`btn btn-outline gap-2 min-w-35 justify-between ${selectedVerification !== "all" ? "btn-primary" : ""}`}
-          >
-            {selectedVerification === "all" ? "Verification" : selectedVerification}
-            <ChevronDown className="h-4 w-4" />
-          </div>
-          <ul
-            tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-52 max-h-60 overflow-y-auto"
-          >
-            <li>
-              <a
-                onClick={() => setSelectedVerification("all")}
-                className={selectedVerification === "all" ? "active" : ""}
-              >
-                All Types
-              </a>
-            </li>
-            {verificationTypes.map((type) => (
-              <li key={type}>
-                <a
-                  onClick={() => setSelectedVerification(type)}
-                  className={selectedVerification === type ? "active" : ""}
-                >
-                  {type}
                 </a>
               </li>
             ))}
@@ -751,17 +703,7 @@ export default function StudentsPage() {
                         </div>
                       </TableCell>
                     )}
-                    {visibleColumns.has("verification_type") && (
-                      <TableCell>
-                        {student.verification_type ? (
-                          <span className="badge badge-sm badge-success">
-                            {student.verification_type}
-                          </span>
-                        ) : (
-                          <span className="text-base-content/60">-</span>
-                        )}
-                      </TableCell>
-                    )}
+                    
                     {visibleColumns.has("specially_abled") && (
                       <TableCell>
                         {student.specially_abled ? (
