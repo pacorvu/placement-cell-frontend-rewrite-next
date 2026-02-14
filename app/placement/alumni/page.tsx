@@ -480,21 +480,21 @@ export default function AlumniPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setShowAddModal(true)}
-            className="btn btn-primary gap-2"
+            className="btn btn-primary gap-2 rounded-none"
           >
             <Plus className="h-4 w-4" />
             Add Alumni
           </button>
           <button
             onClick={handleDownloadTemplate}
-            className="btn btn-outline gap-2"
+            className="btn btn-outline gap-2 rounded-none"
           >
             <FileDown className="h-4 w-4" />
             Download Template
           </button>
           <button
             onClick={() => setShowBulkUploadModal(true)}
-            className="btn btn-outline gap-2"
+            className="btn btn-outline gap-2 rounded-none"
           >
             <Upload className="h-4 w-4" />
             Bulk Upload
@@ -510,7 +510,7 @@ export default function AlumniPage() {
           placeholder="Search by name, company, designation, email..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="input input-bordered w-full pl-10"
+          className="input input-bordered w-full pl-10 rounded-none"
         />
       </div>
 
@@ -521,14 +521,14 @@ export default function AlumniPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-35 justify-between ${selectedBatch !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-35 justify-between rounded-none ${selectedBatch !== "all" ? "btn-primary" : ""}`}
           >
             {selectedBatch === "all" ? "Batch" : selectedBatch}
             <ChevronDown className="h-4 w-4" />
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-52 max-h-60 overflow-y-auto"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-none w-52 max-h-60 overflow-y-auto"
           >
             <li>
               <a
@@ -556,14 +556,14 @@ export default function AlumniPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-37.5 justify-between ${selectedCompany !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-37.5 justify-between rounded-none ${selectedCompany !== "all" ? "btn-primary" : ""}`}
           >
             {selectedCompany === "all" ? "Company" : selectedCompany.length > 15 ? selectedCompany.substring(0, 15) + "..." : selectedCompany}
             <ChevronDown className="h-4 w-4" />
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-64 max-h-60 overflow-y-auto"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-none w-64 max-h-60 overflow-y-auto"
           >
             <li>
               <a
@@ -591,14 +591,14 @@ export default function AlumniPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-35 justify-between ${selectedLocation !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-35 justify-between rounded-none ${selectedLocation !== "all" ? "btn-primary" : ""}`}
           >
             {selectedLocation === "all" ? "Location" : selectedLocation}
             <ChevronDown className="h-4 w-4" />
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-52 max-h-60 overflow-y-auto"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-none w-52 max-h-60 overflow-y-auto"
           >
             <li>
               <a
@@ -623,7 +623,7 @@ export default function AlumniPage() {
 
         {/* Clear Filters */}
         {activeFiltersCount > 0 && (
-          <button onClick={clearFilters} className="btn btn-ghost gap-2">
+          <button onClick={clearFilters} className="btn btn-ghost gap-2 rounded-none">
             Clear Filters ({activeFiltersCount})
           </button>
         )}
@@ -635,14 +635,14 @@ export default function AlumniPage() {
           <div
             tabIndex={0}
             role="button"
-            className="btn btn-outline gap-2"
+            className="btn btn-outline gap-2 rounded-none"
           >
             <Columns3 className="h-4 w-4" />
             Columns
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-60 max-h-96 overflow-y-auto"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-none w-60 max-h-96 overflow-y-auto"
           >
             {COLUMNS.map((column) => (
               <li key={column.key}>
@@ -652,7 +652,7 @@ export default function AlumniPage() {
                     checked={visibleColumns.has(column.key)}
                     onChange={() => toggleColumn(column.key)}
                     disabled={column.alwaysVisible}
-                    className="checkbox checkbox-sm"
+                    className="checkbox checkbox-sm rounded-none"
                   />
                   {column.label}
                 </label>
@@ -662,7 +662,7 @@ export default function AlumniPage() {
         </div>
 
         {/* Export */}
-        <button onClick={handleExport} className="btn btn-outline gap-2">
+        <button onClick={handleExport} className="btn btn-outline gap-2 rounded-none">
           <Download className="h-4 w-4" />
           Export
         </button>
@@ -677,7 +677,7 @@ export default function AlumniPage() {
 
       {/* Error State */}
       {error && (
-        <div className="alert alert-error shadow-lg">
+        <div className="alert alert-error shadow-lg rounded-none">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="stroke-current shrink-0 h-6 w-6"
@@ -697,7 +697,7 @@ export default function AlumniPage() {
 
       {/* Table */}
       {!loading && !error && (
-        <div className="border border-base-300 rounded-lg overflow-x-auto">
+        <div className="border border-base-300 rounded-none overflow-x-auto">
           {filteredAlumni.length === 0 ? (
             <div className="flex items-center justify-center py-20 text-base-content/60">
               <div className="text-center">
@@ -737,7 +737,7 @@ export default function AlumniPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium ${getAvatarColor(alumniItem.full_name)}`}
+                            className={`w-8 h-8 rounded-none flex items-center justify-center text-white text-xs font-medium ${getAvatarColor(alumniItem.full_name)}`}
                           >
                             {getInitials(alumniItem.full_name)}
                           </div>
@@ -749,7 +749,7 @@ export default function AlumniPage() {
                     )}
                     {visibleColumns.has("graduation_year") && (
                       <TableCell>
-                        <span className="badge badge-ghost badge-sm">
+                        <span className="badge badge-ghost badge-sm rounded-none">
                           {alumniItem.graduation_year || "-"}
                         </span>
                       </TableCell>
@@ -802,7 +802,7 @@ export default function AlumniPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="btn btn-ghost btn-xs"
+                              className="btn btn-ghost btn-xs rounded-none"
                             >
                               <Linkedin className="h-4 w-4 text-blue-600" />
                             </a>
@@ -813,7 +813,7 @@ export default function AlumniPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="btn btn-ghost btn-xs"
+                              className="btn btn-ghost btn-xs rounded-none"
                             >
                               <Github className="h-4 w-4 text-base-content" />
                             </a>
@@ -844,17 +844,17 @@ export default function AlumniPage() {
         {totalPages > 1 && (
           <div className="join">
             <button
-              className="join-item btn"
+              className="join-item btn rounded-none"
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
             >
               «
             </button>
-            <button className="join-item btn">
+            <button className="join-item btn rounded-none">
               Page {currentPage} of {totalPages}
             </button>
             <button
-              className="join-item btn"
+              className="join-item btn rounded-none"
               onClick={() =>
                 setCurrentPage((prev) => Math.min(prev + 1, totalPages))
               }
@@ -869,7 +869,7 @@ export default function AlumniPage() {
       {/* Add Alumni Modal */}
       {showAddModal && (
         <div className="modal modal-open">
-          <div className="modal-box max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="modal-box max-w-2xl max-h-[90vh] overflow-y-auto rounded-none">
             <h3 className="font-bold text-lg mb-4">Add New Alumni</h3>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -883,7 +883,7 @@ export default function AlumniPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, full_name: e.target.value })
                     }
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="John Doe"
                     required
                   />
@@ -898,7 +898,7 @@ export default function AlumniPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, usn: e.target.value })
                     }
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="1RV21CS001"
                   />
                 </div>
@@ -920,7 +920,7 @@ export default function AlumniPage() {
                           : null,
                       })
                     }
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="2024"
                   />
                 </div>
@@ -937,7 +937,7 @@ export default function AlumniPage() {
                         personal_email: e.target.value,
                       })
                     }
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="john@example.com"
                     required
                   />
@@ -955,7 +955,7 @@ export default function AlumniPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, phone_number: e.target.value })
                     }
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="+91 9876543210"
                   />
                 </div>
@@ -972,7 +972,7 @@ export default function AlumniPage() {
                         current_company: e.target.value,
                       })
                     }
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="Google"
                   />
                 </div>
@@ -992,7 +992,7 @@ export default function AlumniPage() {
                         current_designation: e.target.value,
                       })
                     }
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="Software Engineer"
                   />
                 </div>
@@ -1009,7 +1009,7 @@ export default function AlumniPage() {
                         current_work_location: e.target.value,
                       })
                     }
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="Bangalore"
                   />
                 </div>
@@ -1025,7 +1025,7 @@ export default function AlumniPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, refered_by: e.target.value })
                   }
-                  className="input input-bordered"
+                  className="input input-bordered rounded-none"
                   placeholder="Name of referrer"
                 />
               </div>
@@ -1039,7 +1039,7 @@ export default function AlumniPage() {
                 <textarea
                   value={otherLinksInput}
                   onChange={(e) => setOtherLinksInput(e.target.value)}
-                  className="textarea textarea-bordered font-mono text-xs"
+                  className="textarea textarea-bordered font-mono text-xs rounded-none"
                   rows={4}
                   placeholder='{"linkedin": "https://linkedin.com/in/username", "github": "https://github.com/username"}'
                 />
@@ -1050,14 +1050,14 @@ export default function AlumniPage() {
               <button
                 onClick={() => setShowAddModal(false)}
                 disabled={isSaving}
-                className="btn btn-ghost"
+                className="btn btn-ghost rounded-none"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddAlumni}
                 disabled={isSaving || !formData.full_name}
-                className="btn btn-primary"
+                className="btn btn-primary rounded-none"
               >
                 {isSaving ? (
                   <span className="loading loading-spinner loading-sm"></span>
@@ -1077,7 +1077,7 @@ export default function AlumniPage() {
       {/* Bulk Upload Modal */}
       {showBulkUploadModal && (
         <div className="modal modal-open">
-          <div className="modal-box">
+          <div className="modal-box rounded-none">
             <h3 className="font-bold text-lg mb-4">Bulk Upload Alumni</h3>
             <div className="space-y-4">
               <p className="text-sm text-base-content/60">
@@ -1091,11 +1091,11 @@ export default function AlumniPage() {
                   onChange={(e) =>
                     setSelectedFile(e.target.files?.[0] || null)
                   }
-                  className="file-input file-input-bordered w-full"
+                  className="file-input file-input-bordered w-full rounded-none"
                 />
               </div>
               {selectedFile && (
-                <div className="alert alert-info">
+                <div className="alert alert-info rounded-none">
                   <span className="text-sm">
                     Selected: {selectedFile.name}
                   </span>
@@ -1110,14 +1110,14 @@ export default function AlumniPage() {
                   setSelectedFile(null);
                 }}
                 disabled={isUploading}
-                className="btn btn-ghost"
+                className="btn btn-ghost rounded-none"
               >
                 Cancel
               </button>
               <button
                 onClick={handleBulkUpload}
                 disabled={isUploading || !selectedFile}
-                className="btn btn-primary"
+                className="btn btn-primary rounded-none"
               >
                 {isUploading ? (
                   <span className="loading loading-spinner loading-sm"></span>

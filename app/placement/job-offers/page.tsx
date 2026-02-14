@@ -431,18 +431,18 @@ export default function JobOffersPage() {
         <div className="flex gap-3">
           <button
             onClick={() => setShowAddModal(true)}
-            className="btn btn-success gap-2"
+            className="btn btn-success gap-2 rounded-none"
           >
             <Plus className="h-4 w-4" />
             Add Offer
           </button>
-          <button onClick={handleExport} className="btn btn-primary btn-outline gap-2">
+          <button onClick={handleExport} className="btn btn-primary btn-outline gap-2 rounded-none">
             <Download className="h-4 w-4" />
             Export Excel
           </button>
           <button
             onClick={() => router.push("/placement/companies")}
-            className="btn btn-outline"
+            className="btn btn-outline rounded-none"
           >
             Add New Company
           </button>
@@ -457,7 +457,7 @@ export default function JobOffersPage() {
           placeholder="Search by USN, company, designation, or referred by"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="input input-bordered w-full pl-12 py-6"
+          className="input input-bordered w-full pl-12 py-6 rounded-none"
         />
       </div>
 
@@ -468,14 +468,14 @@ export default function JobOffersPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-40 justify-between ${selectedCompany !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-40 justify-between rounded-none ${selectedCompany !== "all" ? "btn-primary" : ""}`}
           >
             {selectedCompany === "all" ? "Filter by Company" : selectedCompany}
             <ChevronDown className="h-4 w-4" />
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-56 max-h-60 overflow-y-auto"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-none w-56 max-h-60 overflow-y-auto"
           >
             <li>
               <a
@@ -503,14 +503,14 @@ export default function JobOffersPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-40ify-between ${selectedHiringType !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-40 justify-between rounded-none ${selectedHiringType !== "all" ? "btn-primary" : ""}`}
           >
             {selectedHiringType === "all" ? "Hiring Type" : HIRING_TYPE_LABELS[selectedHiringType]}
             <ChevronDown className="h-4 w-4" />
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-48"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-none w-48"
           >
             <li>
               <a
@@ -538,14 +538,14 @@ export default function JobOffersPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-35 justify-between ${selectedJobType !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-35 justify-between rounded-none ${selectedJobType !== "all" ? "btn-primary" : ""}`}
           >
             {selectedJobType === "all" ? "Job Type" : selectedJobType}
             <ChevronDown className="h-4 w-4" />
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-48"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-none w-48"
           >
             <li>
               <a
@@ -573,14 +573,14 @@ export default function JobOffersPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-40 justify-between ${selectedOfferStatus !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-40 justify-between rounded-none ${selectedOfferStatus !== "all" ? "btn-primary" : ""}`}
           >
             {selectedOfferStatus === "all" ? "Offer Status" : OFFER_STATUS_LABELS[selectedOfferStatus]}
             <ChevronDown className="h-4 w-4" />
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-48"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-none w-48"
           >
             <li>
               <a
@@ -608,14 +608,14 @@ export default function JobOffersPage() {
           <div
             tabIndex={0}
             role="button"
-            className={`btn btn-outline gap-2 min-w-40 justify-between ${selectedInterviewStatus !== "all" ? "btn-primary" : ""}`}
+            className={`btn btn-outline gap-2 min-w-40 justify-between rounded-none ${selectedInterviewStatus !== "all" ? "btn-primary" : ""}`}
           >
             {selectedInterviewStatus === "all" ? "Interview Status" : selectedInterviewStatus}
             <ChevronDown className="h-4 w-4" />
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-48"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-none w-48"
           >
             <li>
               <a
@@ -639,7 +639,7 @@ export default function JobOffersPage() {
         </div>
 
         {activeFiltersCount > 0 && (
-          <button onClick={clearFilters} className="btn btn-ghost gap-2">
+          <button onClick={clearFilters} className="btn btn-ghost gap-2 rounded-none">
             Clear Filters ({activeFiltersCount})
           </button>
         )}
@@ -651,14 +651,14 @@ export default function JobOffersPage() {
           <div
             tabIndex={0}
             role="button"
-            className="btn btn-outline gap-2"
+            className="btn btn-outline gap-2 rounded-none"
           >
             <Columns3 className="h-4 w-4" />
             Columns
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-60 max-h-96 overflow-y-auto"
+            className="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-none w-60 max-h-96 overflow-y-auto"
           >
             {COLUMNS.map((column) => (
               <li key={column.key}>
@@ -668,7 +668,7 @@ export default function JobOffersPage() {
                     checked={visibleColumns.has(column.key)}
                     onChange={() => toggleColumn(column.key)}
                     disabled={column.alwaysVisible}
-                    className="checkbox checkbox-sm"
+                    className="checkbox checkbox-sm rounded-none"
                   />
                   {column.label}
                 </label>
@@ -687,7 +687,7 @@ export default function JobOffersPage() {
 
       {/* Error State */}
       {error && (
-        <div className="alert alert-error shadow-lg">
+        <div className="alert alert-error shadow-lg rounded-none">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="stroke-current shrink-0 h-6 w-6"
@@ -707,7 +707,7 @@ export default function JobOffersPage() {
 
       {/* Table */}
       {!loading && !error && (
-        <div className="card bg-base-100 shadow border border-base-200">
+        <div className="card bg-base-100 shadow border border-base-200 rounded-none">
           <div className="card-body p-0">
             {filteredOffers.length === 0 ? (
               <div className="flex items-center justify-center py-20 text-base-content/60">
@@ -763,7 +763,7 @@ export default function JobOffersPage() {
                         {visibleColumns.has("hiring_type") && (
                           <TableCell>
                             {offer.hiring_type ? (
-                              <span className="badge badge-sm badge-outline">
+                              <span className="badge badge-sm badge-outline rounded-none">
                                 {HIRING_TYPE_LABELS[offer.hiring_type]}
                               </span>
                             ) : (
@@ -774,7 +774,7 @@ export default function JobOffersPage() {
                         {visibleColumns.has("job_type") && (
                           <TableCell>
                             {offer.job_type ? (
-                              <span className="badge badge-sm badge-ghost">
+                              <span className="badge badge-sm badge-ghost rounded-none">
                                 {offer.job_type}
                               </span>
                             ) : (
@@ -818,7 +818,7 @@ export default function JobOffersPage() {
                           <TableCell>
                             {offer.offer_letter_status ? (
                               <span
-                                className={`px-3 py-1 text-xs font-semibold rounded ${STATUS_STYLES[offer.offer_letter_status]}`}
+                                className={`px-3 py-1 text-xs font-semibold rounded-none ${STATUS_STYLES[offer.offer_letter_status]}`}
                               >
                                 {OFFER_STATUS_LABELS[offer.offer_letter_status]}
                               </span>
@@ -830,7 +830,7 @@ export default function JobOffersPage() {
                         {visibleColumns.has("final_interview_status") && (
                           <TableCell>
                             <span
-                              className={`px-3 py-1 text-xs font-semibold rounded ${STATUS_STYLES[offer.final_interview_status]}`}
+                              className={`px-3 py-1 text-xs font-semibold rounded-none ${STATUS_STYLES[offer.final_interview_status]}`}
                             >
                               {offer.final_interview_status}
                             </span>
@@ -865,13 +865,13 @@ export default function JobOffersPage() {
       {/* Add Offer Modal */}
       {showAddModal && (
         <div className="modal modal-open">
-          <div className="modal-box max-w-3xl max-h-[90vh] overflow-y-auto">
+          <div className="modal-box max-w-3xl max-h-[90vh] overflow-y-auto rounded-none">
             <button
               onClick={() => {
                 setShowAddModal(false);
                 resetForm();
               }}
-              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4"
+              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 rounded-none"
             >
               <X className="h-4 w-4" />
             </button>
@@ -890,7 +890,7 @@ export default function JobOffersPage() {
                   type="text"
                   value={formData.usn}
                   onChange={(e) => setFormData({ ...formData, usn: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered rounded-none"
                   placeholder="Enter student USN"
                 />
               </div>
@@ -914,11 +914,11 @@ export default function JobOffersPage() {
                       }
                     }}
                     onFocus={() => setShowCompanyDropdown(true)}
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full rounded-none"
                     placeholder="Search company"
                   />
                   {showCompanyDropdown && filteredCompanies.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-none shadow-lg max-h-60 overflow-y-auto">
                       {filteredCompanies.map((company) => (
                         <div
                           key={company.id}
@@ -947,7 +947,7 @@ export default function JobOffersPage() {
                     type="text"
                     value={formData.designation}
                     onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="e.g., Software Engineer"
                   />
                 </div>
@@ -959,7 +959,7 @@ export default function JobOffersPage() {
                   <select
                     value={formData.hiring_type}
                     onChange={(e) => setFormData({ ...formData, hiring_type: e.target.value })}
-                    className="select select-bordered"
+                    className="select select-bordered rounded-none"
                   >
                     <option value="">Select Hiring Type</option>
                     <option value="FULL_TIME">Full-time</option>
@@ -980,7 +980,7 @@ export default function JobOffersPage() {
                   <select
                     value={formData.job_type}
                     onChange={(e) => setFormData({ ...formData, job_type: e.target.value })}
-                    className="select select-bordered"
+                    className="select select-bordered rounded-none"
                   >
                     <option value="">Select Job Type</option>
                     <option value="DOMESTIC">Domestic</option>
@@ -996,7 +996,7 @@ export default function JobOffersPage() {
                     type="text"
                     value={formData.refered_by}
                     onChange={(e) => setFormData({ ...formData, refered_by: e.target.value })}
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="Referrer name"
                   />
                 </div>
@@ -1012,7 +1012,7 @@ export default function JobOffersPage() {
                     type="number"
                     value={formData.internship_duration}
                     onChange={(e) => setFormData({ ...formData, internship_duration: e.target.value })}
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="e.g., 3"
                     min="0"
                   />
@@ -1026,7 +1026,7 @@ export default function JobOffersPage() {
                     type="number"
                     value={formData.internship_stipend}
                     onChange={(e) => setFormData({ ...formData, internship_stipend: e.target.value })}
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="e.g., 50000"
                     min="0"
                   />
@@ -1043,7 +1043,7 @@ export default function JobOffersPage() {
                     type="number"
                     value={formData.ctc_min_lpa}
                     onChange={(e) => setFormData({ ...formData, ctc_min_lpa: e.target.value })}
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="e.g., 10"
                     min="0"
                     step="0.1"
@@ -1058,7 +1058,7 @@ export default function JobOffersPage() {
                     type="number"
                     value={formData.ctc_max_lpa}
                     onChange={(e) => setFormData({ ...formData, ctc_max_lpa: e.target.value })}
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="e.g., 12"
                     min="0"
                     step="0.1"
@@ -1073,7 +1073,7 @@ export default function JobOffersPage() {
                     type="number"
                     value={formData.ctc_variable_pay}
                     onChange={(e) => setFormData({ ...formData, ctc_variable_pay: e.target.value })}
-                    className="input input-bordered"
+                    className="input input-bordered rounded-none"
                     placeholder="e.g., 10"
                     min="0"
                     max="100"
@@ -1090,7 +1090,7 @@ export default function JobOffersPage() {
                   <select
                     value={formData.offer_letter_status}
                     onChange={(e) => setFormData({ ...formData, offer_letter_status: e.target.value })}
-                    className="select select-bordered"
+                    className="select select-bordered rounded-none"
                   >
                     <option value="">Select Status</option>
                     <option value="NOT_ISSUED">Not Issued</option>
@@ -1110,7 +1110,7 @@ export default function JobOffersPage() {
                   <select
                     value={formData.final_interview_status}
                     onChange={(e) => setFormData({ ...formData, final_interview_status: e.target.value })}
-                    className="select select-bordered"
+                    className="select select-bordered rounded-none"
                   >
                     <option value="">Select Status</option>
                     <option value="PASSED">Passed</option>
@@ -1128,7 +1128,7 @@ export default function JobOffersPage() {
                 <textarea
                   value={formData.remarks}
                   onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                  className="textarea textarea-bordered"
+                  className="textarea textarea-bordered rounded-none"
                   rows={3}
                   placeholder="Additional notes or remarks"
                 />
@@ -1141,14 +1141,14 @@ export default function JobOffersPage() {
                   setShowAddModal(false);
                   resetForm();
                 }}
-                className="btn btn-ghost"
+                className="btn btn-ghost rounded-none"
                 disabled={submitting}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="btn btn-success"
+                className="btn btn-success rounded-none"
                 disabled={submitting || !formData.usn || !formData.company_id || !formData.final_interview_status}
               >
                 {submitting ? (
