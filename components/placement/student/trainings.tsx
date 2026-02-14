@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import { getFieldError } from "@/lib/form-helper";
+import { is404Error, EmptyState } from "./all.formUI";
 
 // ==================== SCHEMAS ====================
 const trainingItemSchema = z.object({
@@ -1107,7 +1108,15 @@ export default function TrainingsForm({
     },
     queryKey: ["trainings", userId],
   });
-
+  if (is404Error(error)) {
+    return (
+      <div className="space-y-6 max-w-4xl">
+        <h2 className="text-2xl font-bold mb-6">Projects</h2>
+        <AddTrainingForm userId={userId} onSuccess={onSuccess} onError={onError} />
+        <EmptyState resourceName="projects" message="No projects found. Add your first project above." />
+      </div>
+    );
+  }
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">

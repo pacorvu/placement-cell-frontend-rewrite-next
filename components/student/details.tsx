@@ -260,9 +260,11 @@ export default function ProfileDetailsForm({
         );
         return response.data;
       } catch (err: any) {
+        // 404 means no profile exists yet - this is expected for new users
         if (err.response?.status === 404) {
           return null;
         }
+        // Other errors should be thrown
         throw err;
       }
     },
@@ -320,7 +322,7 @@ export default function ProfileDetailsForm({
     },
   });
 
-  // TanStack Form setup
+  // TanStack Form setup with empty defaults
   const form = useForm({
     defaultValues: {
       brief_summary: "",
@@ -340,7 +342,7 @@ export default function ProfileDetailsForm({
     },
   });
 
-  // Sync form values with fetched data
+  // Sync form values with fetched data (only when updating)
   useEffect(() => {
     if (data && !form.state.isDirty) {
       form.setFieldValue("brief_summary", data.brief_summary);
@@ -354,12 +356,16 @@ export default function ProfileDetailsForm({
 
   const handleReset = () => {
     if (data) {
+      // Reset to saved values when updating
       form.setFieldValue("brief_summary", data.brief_summary);
       form.setFieldValue("career_objective", data.career_objective);
       form.setFieldValue("dream_company", data.dream_company);
       form.setFieldValue("dream_package", data.dream_package);
       form.setFieldValue("hobbies_interests", data.hobbies_interests || []);
       form.setFieldValue("key_expertise", data.key_expertise);
+    } else {
+      // Reset to empty values when creating
+      form.reset();
     }
   };
 
@@ -371,9 +377,10 @@ export default function ProfileDetailsForm({
     );
   }
 
+  // Only show error for non-404 errors
   if (isError && error) {
     return (
-      <div className="alert alert-error">
+      <div className="alert alert-error rounded-none">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="stroke-current shrink-0 h-6 w-6"
@@ -392,6 +399,7 @@ export default function ProfileDetailsForm({
     );
   }
 
+  // Render the form (empty for create, filled for update)
   return (
     <form
       onSubmit={(e) => {
@@ -401,15 +409,35 @@ export default function ProfileDetailsForm({
       }}
       className="space-y-4 max-w-4xl"
     >
-      <div className="card bg-base-100 shadow-xl">
+      <div className="card bg-base-100 shadow-xl rounded-none">
         {/* Header */}
         <div className="card-body">
           <h2 className="card-title text-2xl">Profile Details</h2>
           <p className="text-sm opacity-70">
             {isCreating
-              ? "Add your professional profile information"
+              ? "Create your professional profile information"
               : "Update your professional profile information"}
           </p>
+
+          {/* Show info alert when creating (404 = no profile exists) */}
+          {isCreating && (
+            <div className="alert alert-info rounded-none mt-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                className="stroke-current shrink-0 w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>No profile details found. Fill out the form below to create your profile.</span>
+            </div>
+          )}
 
           <div className="space-y-4 mt-4">
             {/* Brief Summary */}
@@ -434,7 +462,7 @@ export default function ProfileDetailsForm({
                     disabled={!FIELD_PERMISSIONS.brief_summary}
                     placeholder="Write a brief professional summary about yourself (2-3 sentences)"
                     rows={4}
-                    className="textarea textarea-bordered w-full"
+                    className="textarea textarea-bordered w-full rounded-none"
                   />
                 </FormField>
               )}
@@ -462,7 +490,7 @@ export default function ProfileDetailsForm({
                     disabled={!FIELD_PERMISSIONS.key_expertise}
                     placeholder="Describe your core competencies and areas of expertise"
                     rows={3}
-                    className="textarea textarea-bordered w-full"
+                    className="textarea textarea-bordered w-full rounded-none"
                   />
                 </FormField>
               )}
@@ -490,7 +518,7 @@ export default function ProfileDetailsForm({
                     disabled={!FIELD_PERMISSIONS.career_objective}
                     placeholder="Describe your career goals and aspirations"
                     rows={4}
-                    className="textarea textarea-bordered w-full"
+                    className="textarea textarea-bordered w-full rounded-none"
                   />
                 </FormField>
               )}
@@ -519,7 +547,7 @@ export default function ProfileDetailsForm({
                       onBlur={field.handleBlur}
                       disabled={!FIELD_PERMISSIONS.dream_company}
                       placeholder="e.g., Google, Microsoft, Amazon"
-                      className="input input-bordered w-full"
+                      className="input input-bordered w-full rounded-none"
                     />
                   </FormField>
                 )}
@@ -552,7 +580,7 @@ export default function ProfileDetailsForm({
                       disabled={!FIELD_PERMISSIONS.dream_package}
                       placeholder="e.g., 15.5"
                       min="0"
-                      className="input input-bordered w-full"
+                      className="input input-bordered w-full rounded-none"
                     />
                   </FormField>
                 )}
@@ -591,23 +619,21 @@ export default function ProfileDetailsForm({
                 <button
                   type="submit"
                   disabled={!canSubmit || isSubmitting}
-                  className="btn btn-primary"
+                  className="btn btn-primary rounded-none"
                 >
                   {isSubmitting && (
                     <span className="loading loading-spinner"></span>
                   )}
                   {isCreating ? "Create Profile" : "Save Changes"}
                 </button>
-                {!isCreating && (
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    disabled={isSubmitting}
-                    className="btn btn-outline"
-                  >
-                    Reset
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  disabled={isSubmitting}
+                  className="btn btn-outline rounded-none"
+                >
+                  {isCreating ? "Clear Form" : "Reset"}
+                </button>
               </div>
             )}
           </form.Subscribe>

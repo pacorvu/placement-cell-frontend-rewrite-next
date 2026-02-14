@@ -190,3 +190,21 @@ export function RepeatableSection({
 		</div>
 	);
 }
+
+export function is404Error(error: any): boolean {
+  return error?.response?.status === 404;
+}
+
+interface EmptyStateProps {
+  resourceName: string;
+  message?: string;
+}
+
+export function EmptyState({ resourceName, message }: EmptyStateProps) {
+  return (
+    <div className="p-8 text-center opacity-70 bg-base-200 rounded-none border-2 border-dashed border-base-300">
+      {message || `No ${resourceName} found.`}
+    </div>
+  );
+}
+

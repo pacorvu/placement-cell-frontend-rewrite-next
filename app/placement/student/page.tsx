@@ -13,9 +13,9 @@ const studentSchema = z.object({
   user_id: z.number().nullable(),
   full_name: z.string(),
   gender: z.string(),
-  date_of_birth: z.string(),
+  date_of_birth: z.string().nullable(),
   specially_abled: z.boolean(),
-  languages: z.array(z.string()),
+  languages: z.array(z.string()).nullable(),
   personal_email: z.string().nullable(),
   profile_image: z.string().nullable(),
   profile_image_signed_url: z.string().nullable(),
@@ -280,7 +280,7 @@ export default function StudentsPage() {
         .map((c) => {
           if (c.key === "index") return index + 1;
           if (c.key === "languages") {
-            return `"${student.languages.join("; ")}"`;
+            return `"${(student.languages ?? []).join("; ")}"`;
           }
           if (c.key === "specially_abled") {
             return student.specially_abled ? "Yes" : "No";
@@ -709,15 +709,18 @@ export default function StudentsPage() {
                     {visibleColumns.has("languages") && (
                       <td>
                         <div className="flex flex-wrap gap-1 max-w-xs">
-                          {student.languages.slice(0, 2).map((lang, i) => (
+                          {(student.languages ?? []).slice(0, 2).map((lang, i) => (
                             <span key={i} className="badge badge-sm badge-ghost rounded-none">
                               {lang}
                             </span>
                           ))}
-                          {student.languages.length > 2 && (
+                          {(student.languages?.length ?? 0) > 2 && (
                             <span className="badge badge-sm badge-ghost rounded-none">
-                              +{student.languages.length - 2}
+                              +{(student.languages?.length ?? 0) - 2}
                             </span>
+                          )}
+                          {(!student.languages || student.languages.length === 0) && (
+                            <span className="text-base-content/50 text-sm">-</span>
                           )}
                         </div>
                       </td>
@@ -733,7 +736,7 @@ export default function StudentsPage() {
                     )}
                     {visibleColumns.has("date_of_birth") && (
                       <td className="whitespace-nowrap">
-                        {formatDate(student.date_of_birth)}
+                        {formatDate(student.date_of_birth ?? "")}
                       </td>
                     )}
                   </tr>

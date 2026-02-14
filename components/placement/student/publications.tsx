@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import { getFieldError } from "@/lib/form-helper";
+import { EmptyState, is404Error } from "./all.formUI";
 
 // ==================== SCHEMAS ====================
 const publicationItemSchema = z.object({
@@ -1189,6 +1190,16 @@ export default function PublicationsForm({
     },
     queryKey: ["publications", userId],
   });
+
+  if (is404Error(error)) {
+    return (
+      <div className="space-y-6 max-w-4xl">
+        <h2 className="text-2xl font-bold mb-6">Projects</h2>
+        <AddPublicationForm userId={userId} onSuccess={onSuccess} onError={onError} />
+        <EmptyState resourceName="projects" message="No projects found. Add your first project above." />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
