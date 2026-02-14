@@ -102,7 +102,7 @@ export default function ForgotPasswordComponent() {
     // Validate email
     const result = emailSchema.safeParse({ email });
     if (!result.success) {
-      setAlert({ type: "error", message: result.error.errors[0].message });
+      setAlert({ type: "error", message: result.error.issues[0].message });
       return;
     }
 
@@ -133,7 +133,7 @@ export default function ForgotPasswordComponent() {
     // Validate OTP format
     const result = otpSchema.safeParse({ otp });
     if (!result.success) {
-      setAlert({ type: "error", message: result.error.errors[0].message });
+      setAlert({ type: "error", message: result.error.issues[0].message });
       return;
     }
 
@@ -169,7 +169,7 @@ export default function ForgotPasswordComponent() {
     // Validate passwords
     const result = passwordSchema.safeParse({ newPassword, confirmPassword });
     if (!result.success) {
-      setAlert({ type: "error", message: result.error.errors[0].message });
+      setAlert({ type: "error", message: result.error.issues[0].message });
       return;
     }
 
