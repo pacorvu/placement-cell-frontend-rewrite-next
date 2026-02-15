@@ -26,7 +26,7 @@ import {
 import { api } from "@/lib/api";
 
 // ==================== STATUS DOMAIN ====================
-const StatusEnum = z.enum(["PASSED", "FAILED", "ABSENT"]);
+const StatusEnum = z.enum(["PASSED", "FAILED", "ABSENT", "PENDING"]);
 
 export type Status = z.infer<typeof StatusEnum>;
 
@@ -95,6 +95,7 @@ const STATUS_CONFIG: Record<
   { badge: string; icon: React.FC<{ className?: string }> }
 > = {
   PASSED: { badge: "badge-success", icon: CheckCircle },
+  PENDING: { badge: "badge-success", icon: CheckCircle },
   FAILED: { badge: "badge-error", icon: XCircle },
   ABSENT: { badge: "badge-ghost", icon: XCircle },
 };
