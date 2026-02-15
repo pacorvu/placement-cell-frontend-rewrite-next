@@ -25,22 +25,53 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 
+// ==================== STATUS DOMAIN ====================
+const StatusEnum = z.enum(["PASSED", "FAILED", "ABSENT"]);
+
+export type Status = z.infer<typeof StatusEnum>;
+
+// Explicit null / unknown state
+const NullableStatus = z.union([StatusEnum, z.literal(null)]);
+
+export type NullableStatus = Status | null;
+
+// ==================== BACKEND TRANSFORMATION ====================
+// Backend sends boolean | Status | null, we transform to Status | null
+const BackendStatus = z
+  .union([
+    z.boolean(),
+    StatusEnum,
+    z.null(),
+  ])
+  .transform((value): NullableStatus => {
+    if (value === null) return null;
+    if (value === true) return "PASSED";
+    if (value === false) return "FAILED";
+    // Already a valid Status enum
+    return value;
+  });
+
 // ==================== SCHEMAS ====================
 const placementRecordSchema = z.object({
   id: z.number(),
   placement_drive_id: z.number(),
   usn: z.string(),
+
   is_eligible: z.boolean(),
-  registration_status: z.string(),
-  approved_status: z.string(),
-  oa_status: z.string(),
-  gd_status: z.string(),
-  technical_round_status: z.string(),
-  interview_status: z.string(),
-  hr_round_status: z.string(),
-  final_select_status: z.string(),
+
+  // Transform backend booleans to Status enums
+  registration_status: BackendStatus,
+  approved_status: BackendStatus,
+  oa_status: BackendStatus,
+  gd_status: BackendStatus,
+  technical_round_status: BackendStatus,
+  interview_status: BackendStatus,
+  hr_round_status: BackendStatus,
+  final_select_status: BackendStatus,
+
   malpractice: z.boolean(),
-  remarks: z.string(),
+  remarks: z.string().nullable(),
+
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -50,29 +81,57 @@ const getPlacementRecordsResponse = z.array(placementRecordSchema);
 type PlacementRecord = z.infer<typeof placementRecordSchema>;
 type GetPlacementRecordsResponse = z.infer<typeof getPlacementRecordsResponse>;
 
-// ==================== CONSTANTS ====================
-type FilterType = "all" | "registered" | "unregistered";
+// ==================== STATUS RESOLUTION ====================
+type ResolvedStatus = { kind: "known"; value: Status } | { kind: "unknown" };
 
+function resolveStatus(status: NullableStatus): ResolvedStatus {
+  if (status === null) return { kind: "unknown" };
+  return { kind: "known", value: status };
+}
+
+// ==================== STATUS CONFIGURATION ====================
 const STATUS_CONFIG: Record<
-  string,
+  Status,
   { badge: string; icon: React.FC<{ className?: string }> }
 > = {
-  // PENDING: { badge: "badge-warning", icon: Clock },
-  // APPROVED: { badge: "badge-success", icon: CheckCircle },
-  // REJECTED: { badge: "badge-error", icon: XCircle },
-  // NOT_STARTED: { badge: "badge-ghost", icon: Clock },
   PASSED: { badge: "badge-success", icon: CheckCircle },
   FAILED: { badge: "badge-error", icon: XCircle },
-  ABSENT: { badge: "badge-ghost", icon: XCircle },  // ADD THIS
-  // SELECTED: { badge: "badge-success", icon: CheckCircle },
-  // NOT_SELECTED: { badge: "badge-error", icon: XCircle },
-  // REGISTERED: { badge: "badge-success", icon: UserCheck },
-  // NOT_REGISTERED: { badge: "badge-ghost", icon: UserX },
+  ABSENT: { badge: "badge-ghost", icon: XCircle },
 };
 
-function formatStatus(status: string): string {
-  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+const UNKNOWN_STATUS = {
+  badge: "badge-ghost",
+  icon: Clock,
+  label: "Not Updated",
+};
+
+// ==================== STATUS RENDERING ====================
+function renderStatus(status: NullableStatus) {
+  const resolved = resolveStatus(status);
+
+  if (resolved.kind === "unknown") {
+    const Icon = UNKNOWN_STATUS.icon;
+    return (
+      <span className={`badge ${UNKNOWN_STATUS.badge} flex items-center gap-1`}>
+        <Icon className="w-3 h-3" />
+        {UNKNOWN_STATUS.label}
+      </span>
+    );
+  }
+
+  const config = STATUS_CONFIG[resolved.value];
+  const Icon = config.icon;
+
+  return (
+    <span className={`badge ${config.badge} flex items-center gap-1`}>
+      <Icon className="w-3 h-3" />
+      {resolved.value}
+    </span>
+  );
 }
+
+// ==================== HELPER FUNCTIONS ====================
+type FilterType = "all" | "registered" | "unregistered";
 
 function isRegistered(record: PlacementRecord): boolean {
   return record.registration_status === "PASSED";
@@ -88,8 +147,12 @@ interface ExpandedRowProps {
   isRegistering?: boolean;
 }
 
-function ExpandedRowContent({ record, onRegister, isRegistering }: ExpandedRowProps) {
-  const statusSections = [
+function ExpandedRowContent({
+  record,
+  onRegister,
+  isRegistering,
+}: ExpandedRowProps) {
+  const statusSections: Array<{ label: string; value: NullableStatus }> = [
     { label: "Registration", value: record.registration_status },
     { label: "Approval", value: record.approved_status },
     { label: "Online Assessment", value: record.oa_status },
@@ -104,7 +167,9 @@ function ExpandedRowContent({ record, onRegister, isRegistering }: ExpandedRowPr
     <div className="bg-base-200 p-6 space-y-5">
       {/* Eligibility & Malpractice */}
       <div className="flex gap-4">
-        <div className={`alert ${record.is_eligible ? "alert-success" : "alert-warning"}`}>
+        <div
+          className={`alert ${record.is_eligible ? "alert-success" : "alert-warning"}`}
+        >
           {record.is_eligible ? (
             <CheckCircle className="w-5 h-5" />
           ) : (
@@ -128,22 +193,12 @@ function ExpandedRowContent({ record, onRegister, isRegistering }: ExpandedRowPr
           Process Stages
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {statusSections.map((section) => {
-            const config = STATUS_CONFIG[section.value] ?? {
-              badge: "badge-ghost",
-              icon: Clock,
-            };
-            const Icon = config.icon;
-            return (
-              <div key={section.label} className="bg-base-100 rounded-lg p-3">
-                <div className="text-xs opacity-50 mb-1.5">{section.label}</div>
-                <div className={`badge ${config.badge} flex items-center gap-1`}>
-                  <Icon className="w-3 h-3" />
-                  {formatStatus(section.value)}
-                </div>
-              </div>
-            );
-          })}
+          {statusSections.map((section) => (
+            <div key={section.label} className="bg-base-100 rounded-lg p-3">
+              <div className="text-xs opacity-50 mb-1.5">{section.label}</div>
+              {renderStatus(section.value)}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -180,7 +235,6 @@ function ExpandedRowContent({ record, onRegister, isRegistering }: ExpandedRowPr
         )}
 
         {/* Meta */}
-        {/* <span>Record ID: {record.id}</span> */}
         <span>
           Created{" "}
           {new Date(record.created_at).toLocaleDateString("en-US", {
@@ -195,10 +249,6 @@ function ExpandedRowContent({ record, onRegister, isRegistering }: ExpandedRowPr
 }
 
 // ==================== MAIN COMPONENT ====================
-interface PlacementProcessTableProps {
-  userId: number;
-}
-
 export default function PlacementProcessTable() {
   const userId: number = parseInt(localStorage.getItem("user_id") ?? "0");
   const queryClient = useQueryClient();
@@ -211,19 +261,16 @@ export default function PlacementProcessTable() {
     enabled: !!userId,
     queryKey: ["placement-process", userId],
     queryFn: async () => {
-      const response = await api.get<GetPlacementRecordsResponse>(
-        `/process/user/${userId}`,
-      );
-      return response.data;
+      const response = await api.get(`/process/user/${userId}`);
+      // ✓ CRITICAL: Actually parse through Zod to run transformations
+      return getPlacementRecordsResponse.parse(response.data);
     },
   });
 
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: async (placementDriveId: number) => {
-      const response = await api.post(
-        `/process/register/${placementDriveId}`,
-      );
+      const response = await api.post(`/process/register/${placementDriveId}`);
       return response.data;
     },
     onSuccess: () => {
@@ -246,7 +293,8 @@ export default function PlacementProcessTable() {
   const filteredData = useMemo(() => {
     if (!data) return [];
     if (activeFilter === "all") return data;
-    if (activeFilter === "registered") return data.filter((r) => isRegistered(r));
+    if (activeFilter === "registered")
+      return data.filter((r) => isRegistered(r));
     return data.filter((r) => !isRegistered(r));
   }, [data, activeFilter]);
 
@@ -279,54 +327,15 @@ export default function PlacementProcessTable() {
       }),
       columnHelper.accessor("registration_status", {
         header: "Registration",
-        cell: ({ getValue }) => {
-          const status = getValue();
-          const config = STATUS_CONFIG[status] ?? {
-            badge: "badge-ghost",
-            icon: Clock,
-          };
-          const Icon = config.icon;
-          return (
-            <span className={`badge ${config.badge} flex items-center gap-1`}>
-              <Icon className="w-3 h-3" />
-              {formatStatus(status)}
-            </span>
-          );
-        },
+        cell: ({ getValue }) => renderStatus(getValue()),
       }),
       columnHelper.accessor("approved_status", {
         header: "Approval",
-        cell: ({ getValue }) => {
-          const status = getValue();
-          const config = STATUS_CONFIG[status] ?? {
-            badge: "badge-ghost",
-            icon: Clock,
-          };
-          const Icon = config.icon;
-          return (
-            <span className={`badge ${config.badge} flex items-center gap-1`}>
-              <Icon className="w-3 h-3" />
-              {formatStatus(status)}
-            </span>
-          );
-        },
+        cell: ({ getValue }) => renderStatus(getValue()),
       }),
       columnHelper.accessor("final_select_status", {
         header: "Final Status",
-        cell: ({ getValue }) => {
-          const status = getValue();
-          const config = STATUS_CONFIG[status] ?? {
-            badge: "badge-ghost",
-            icon: Clock,
-          };
-          const Icon = config.icon;
-          return (
-            <span className={`badge ${config.badge} flex items-center gap-1`}>
-              <Icon className="w-3 h-3" />
-              {formatStatus(status)}
-            </span>
-          );
-        },
+        cell: ({ getValue }) => renderStatus(getValue()),
       }),
       columnHelper.accessor("is_eligible", {
         header: "Eligible",
@@ -461,10 +470,7 @@ export default function PlacementProcessTable() {
                     {table.getRowModel().rows.map((row) => (
                       <Fragment key={row.id}>
                         {/* Main Row */}
-                        <tr
-                          key={row.id}
-                          className="hover:bg-base-200 transition-colors"
-                        >
+                        <tr className="hover:bg-base-200 transition-colors">
                           {row.getVisibleCells().map((cell) => (
                             <td key={cell.id}>
                               {flexRender(
@@ -524,4 +530,3 @@ export default function PlacementProcessTable() {
     </div>
   );
 }
-
