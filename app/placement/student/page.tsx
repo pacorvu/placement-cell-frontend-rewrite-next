@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Search, Columns3, Download } from "lucide-react";
+import { ChevronDown, Search, Columns3, Download, Plus, Upload, FileDown } from "lucide-react";
 import { z } from "zod";
 import { api } from "@/lib/api";
 
@@ -37,8 +37,50 @@ const apiResponseSchema = z.object({
   data: z.array(studentSchema),
 });
 
+
+const resourcesEnumSchema = z.object({
+  majors: z.object({
+    mapping: z.record(z.string(), z.string()),
+    total: z.number(),
+  }),
+  minors: z.object({
+    mapping: z.record(z.string(), z.string()),
+    total: z.number(),
+  }),
+  specializations: z.object({
+    mapping: z.record(z.string(), z.string()),
+    total: z.number(),
+  }),
+  schools: z.object({
+    mapping: z.record(z.string(), z.string()),
+    total: z.number(),
+  }),
+  programs: z.object({
+    mapping: z.record(z.string(), z.string()),
+    total: z.number(),
+  }),
+});
 type Student = z.infer<typeof studentSchema>;
 type ApiResponse = z.infer<typeof apiResponseSchema>;
+type ResourcesEnum = z.infer<typeof resourcesEnumSchema>;
+
+interface StudentFormData {
+  usn: string;
+  full_name: string;
+  gender: string;
+  date_of_birth: string;
+  specially_abled: boolean;
+  languages: string[];
+  personal_email: string;
+  verification_type: string | null;
+  school_id: number | null;
+  program_id: number | null;
+  specialization_id: number | null;
+  major_id: number | null;
+  minor_id: number | null;
+  year_of_joining: number | null;
+  email: string;
+}
 
 // ==================== CONSTANTS ====================
 const COLUMNS = [
@@ -58,6 +100,8 @@ const COLUMNS = [
   { key: "specially_abled", label: "SPECIALLY ABLED" },
   { key: "date_of_birth", label: "DOB" },
 ];
+
+const GENDERS = ["Male", "Female", "Other"];
 
 // ==================== HELPER FUNCTIONS ====================
 function getInitials(name: string): string {
@@ -124,14 +168,50 @@ export default function StudentsPage() {
     ])
   );
 
+  // Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [languageInput, setLanguageInput] = useState("");
+  const [languages, setLanguages] = useState<string[]>([]);
+
+  const [formData, setFormData] = useState<StudentFormData>({
+    usn: "",
+    full_name: "",
+    gender: "",
+    date_of_birth: "",
+    specially_abled: false,
+    languages: [],
+    personal_email: "",
+    verification_type: null,
+    school_id: null,
+    program_id: null,
+    specialization_id: null,
+    major_id: null,
+    minor_id: null,
+    year_of_joining: null,
+    email: "",
+  });
+
   // Fetch students data with React Query
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["students", currentPage],
     queryFn: async () => {
       const response = await api.get<ApiResponse>(
         `/students/personal-details/all?page=${currentPage}&limit=${limit}`
       );
       return apiResponseSchema.parse(response.data);
+    },
+  });
+
+  // Fetch resources enum
+  const { data: resourcesData } = useQuery({
+    queryKey: ["resources-enum"],
+    queryFn: async () => {
+      const response = await api.get<ResourcesEnum>("/placements/resources-enum");
+      return resourcesEnumSchema.parse(response.data);
     },
   });
 
@@ -320,9 +400,225 @@ export default function StudentsPage() {
     showSpeciallyAbled !== "all",
   ].filter(Boolean).length;
 
+  const handleAddStudent = async () => {
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const submitData = {
+        ...formData,
+        languages: languages,
+        date_of_birth: formData.date_of_birth || null,
+        personal_email: formData.personal_email || null,
+        school_id: formData.school_id || null,
+        program_id: formData.program_id || null,
+        specialization_id: formData.specialization_id || null,
+        major_id: formData.major_id || null,
+        minor_id: formData.minor_id || null,
+        year_of_joining: formData.year_of_joining || null,
+      };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/students/personal-details/user`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(submitData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to add student");
+      }
+
+      // Show success toast
+      const toastDiv = document.createElement("div");
+      toastDiv.className = "toast toast-top toast-center";
+      toastDiv.innerHTML = `
+        <div class="alert alert-success">
+          <span>Student added successfully!</span>
+        </div>
+      `;
+      document.body.appendChild(toastDiv);
+      setTimeout(() => toastDiv.remove(), 3000);
+
+      // Reset form and close modal
+      setFormData({
+        usn: "",
+        full_name: "",
+        gender: "",
+        date_of_birth: "",
+        specially_abled: false,
+        languages: [],
+        personal_email: "",
+        verification_type: null,
+        school_id: null,
+        program_id: null,
+        specialization_id: null,
+        major_id: null,
+        minor_id: null,
+        year_of_joining: null,
+        email: "",
+      });
+      setLanguages([]);
+      setLanguageInput("");
+      setShowAddModal(false);
+
+      // Refresh data
+      refetch();
+    } catch (err) {
+      const toastDiv = document.createElement("div");
+      toastDiv.className = "toast toast-top toast-center";
+      toastDiv.innerHTML = `
+        <div class="alert alert-error">
+          <span>${err instanceof Error ? err.message : "Failed to add student"}</span>
+        </div>
+      `;
+      document.body.appendChild(toastDiv);
+      setTimeout(() => toastDiv.remove(), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/students/bulk-upload/template`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to download template");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "students_bulk_upload_template.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to download template");
+    }
+  };
+
+  const handleBulkUpload = async () => {
+    if (!selectedFile) {
+      alert("Please select a file to upload");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/students/bulk-upload`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to upload file");
+      }
+
+      const toastDiv = document.createElement("div");
+      toastDiv.className = "toast toast-top toast-center";
+      toastDiv.innerHTML = `
+        <div class="alert alert-success">
+          <span>Bulk upload successful!</span>
+        </div>
+      `;
+      document.body.appendChild(toastDiv);
+      setTimeout(() => toastDiv.remove(), 3000);
+
+      setSelectedFile(null);
+      setShowBulkUploadModal(false);
+      refetch();
+    } catch (err) {
+      const toastDiv = document.createElement("div");
+      toastDiv.className = "toast toast-top toast-center";
+      toastDiv.innerHTML = `
+        <div class="alert alert-error">
+          <span>${err instanceof Error ? err.message : "Failed to upload file"}</span>
+        </div>
+      `;
+      document.body.appendChild(toastDiv);
+      setTimeout(() => toastDiv.remove(), 3000);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const addLanguage = () => {
+    if (languageInput.trim() && !languages.includes(languageInput.trim())) {
+      setLanguages([...languages, languageInput.trim()]);
+      setLanguageInput("");
+    }
+  };
+
+  const removeLanguage = (index: number) => {
+    setLanguages(languages.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Students</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Students</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="btn btn-primary gap-2 rounded-none"
+          >
+            <Plus className="h-4 w-4" />
+            Add Student
+          </button>
+          <button
+            onClick={handleDownloadTemplate}
+            className="btn btn-outline gap-2 rounded-none"
+          >
+            <FileDown className="h-4 w-4" />
+            Download Template
+          </button>
+          <button
+            onClick={() => setShowBulkUploadModal(true)}
+            className="btn btn-outline gap-2 rounded-none"
+          >
+            <Upload className="h-4 w-4" />
+            Bulk Upload
+          </button>
+        </div>
+      </div>
 
       {/* Search Bar */}
       <div className="relative max-w-md">
@@ -593,7 +889,7 @@ export default function StudentsPage() {
 
       {/* Table */}
       {!isLoading && !isError && (
-        <div className="overflow-x-auto border border-base-300">
+        <div className="overflow-x-auto border border-base-300 rounded-none">
           {filteredStudents.length === 0 ? (
             <div className="flex items-center justify-center py-20 text-base-content/60">
               <div className="text-center">
@@ -736,7 +1032,7 @@ export default function StudentsPage() {
                     )}
                     {visibleColumns.has("date_of_birth") && (
                       <td className="whitespace-nowrap">
-                        {formatDate(student.date_of_birth ?? "")}
+                        {student.date_of_birth ? formatDate(student.date_of_birth) : "-"}
                       </td>
                     )}
                   </tr>
@@ -759,17 +1055,17 @@ export default function StudentsPage() {
         {totalPages > 1 && (
           <div className="join">
             <button
-              className="join-item btn btn-sm rounded-none"
+              className="join-item btn rounded-none"
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
             >
               «
             </button>
-            <button className="join-item btn btn-sm rounded-none">
+            <button className="join-item btn rounded-none">
               Page {currentPage} of {totalPages}
             </button>
             <button
-              className="join-item btn btn-sm rounded-none"
+              className="join-item btn rounded-none"
               onClick={() =>
                 setCurrentPage((prev) => Math.min(prev + 1, totalPages))
               }
@@ -780,6 +1076,441 @@ export default function StudentsPage() {
           </div>
         )}
       </div>
+
+      {/* Add Student Modal */}
+      {showAddModal && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-3xl max-h-[90vh] overflow-y-auto rounded-none">
+            <h3 className="font-bold text-lg mb-4">Add New Student</h3>
+            <div className="space-y-4">
+              {/* Row 1 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Full Name *</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.full_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, full_name: e.target.value })
+                    }
+                    className="input input-bordered rounded-none"
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">USN *</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.usn}
+                    onChange={(e) =>
+                      setFormData({ ...formData, usn: e.target.value })
+                    }
+                    className="input input-bordered rounded-none"
+                    placeholder="1RV21CS001"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Row 2 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Gender *</span>
+                  </label>
+                  <select
+                    value={formData.gender}
+                    onChange={(e) =>
+                      setFormData({ ...formData, gender: e.target.value })
+                    }
+                    className="select select-bordered rounded-none"
+                    required
+                  >
+                    <option value="">Select Gender</option>
+                    {GENDERS.map((gender) => (
+                      <option key={gender} value={gender}>
+                        {gender}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Date of Birth</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        date_of_birth: e.target.value,
+                      })
+                    }
+                    className="input input-bordered rounded-none"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Personal Email</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.personal_email}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        personal_email: e.target.value,
+                      })
+                    }
+                    className="input input-bordered rounded-none"
+                    placeholder="john@example.com"
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Institute Email *</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className="input input-bordered rounded-none"
+                    placeholder="john@rvu.edu.in"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Row 4 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">School</span>
+                  </label>
+                  <select
+                    value={formData.school_id || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        school_id: e.target.value ? parseInt(e.target.value) : null,
+                      })
+                    }
+                    className="select select-bordered rounded-none"
+                  >
+                    <option value="">Select School</option>
+                    {resourcesData &&
+                      Object.entries(resourcesData.schools.mapping).map(
+                        ([id, name]) => (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        )
+                      )}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Program</span>
+                  </label>
+                  <select
+                    value={formData.program_id || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        program_id: e.target.value ? parseInt(e.target.value) : null,
+                      })
+                    }
+                    className="select select-bordered rounded-none"
+                  >
+                    <option value="">Select Program</option>
+                    {resourcesData &&
+                      Object.entries(resourcesData.programs.mapping).map(
+                        ([id, name]) => (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        )
+                      )}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 5 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Specialization</span>
+                  </label>
+                  <select
+                    value={formData.specialization_id || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        specialization_id: e.target.value
+                          ? parseInt(e.target.value)
+                          : null,
+                      })
+                    }
+                    className="select select-bordered rounded-none"
+                  >
+                    <option value="">Select Specialization</option>
+                    {resourcesData &&
+                      Object.entries(resourcesData.specializations.mapping).map(
+                        ([id, name]) => (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        )
+                      )}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Year of Joining</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.year_of_joining || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        year_of_joining: e.target.value
+                          ? parseInt(e.target.value)
+                          : null,
+                      })
+                    }
+                    className="input input-bordered rounded-none"
+                    placeholder="2021"
+                    min="2000"
+                    max="2100"
+                  />
+                </div>
+              </div>
+
+              {/* Row 6 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Major</span>
+                  </label>
+                  <select
+                    value={formData.major_id || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        major_id: e.target.value ? parseInt(e.target.value) : null,
+                      })
+                    }
+                    className="select select-bordered rounded-none"
+                  >
+                    <option value="">Select Major</option>
+                    {resourcesData &&
+                      Object.entries(resourcesData.majors.mapping).map(
+                        ([id, name]) => (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        )
+                      )}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Minor</span>
+                  </label>
+                  <select
+                    value={formData.minor_id || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        minor_id: e.target.value ? parseInt(e.target.value) : null,
+                      })
+                    }
+                    className="select select-bordered rounded-none"
+                  >
+                    <option value="">Select Minor</option>
+                    {resourcesData &&
+                      Object.entries(resourcesData.minors.mapping).map(
+                        ([id, name]) => (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        )
+                      )}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 7 - Languages */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Languages</span>
+                </label>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={languageInput}
+                      onChange={(e) => setLanguageInput(e.target.value)}
+                      placeholder="Add a language"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addLanguage();
+                        }
+                      }}
+                      className="input input-bordered flex-1 rounded-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={addLanguage}
+                      className="btn btn-primary rounded-none"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {languages.map((lang, index) => (
+                      <div key={index} className="badge badge-secondary gap-2 p-4 rounded-none">
+                        <span>{lang}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeLanguage(index)}
+                          className="btn btn-ghost btn-xs btn-circle"
+                          aria-label={`Remove ${lang}`}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 8 */}
+              <div className="form-control">
+                <label className="label cursor-pointer justify-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.specially_abled}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        specially_abled: e.target.checked,
+                      })
+                    }
+                    className="checkbox checkbox-sm rounded-none"
+                  />
+                  <span className="label-text">Specially Abled</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="modal-action">
+              <button
+                onClick={() => setShowAddModal(false)}
+                disabled={isSaving}
+                className="btn btn-ghost rounded-none"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddStudent}
+                disabled={
+                  isSaving ||
+                  !formData.full_name ||
+                  !formData.usn ||
+                  !formData.gender ||
+                  !formData.email
+                }
+                className="btn btn-primary rounded-none"
+              >
+                {isSaving ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  "Add Student"
+                )}
+              </button>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => !isSaving && setShowAddModal(false)}
+          ></div>
+        </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {showBulkUploadModal && (
+        <div className="modal modal-open">
+          <div className="modal-box rounded-none">
+            <h3 className="font-bold text-lg mb-4">Bulk Upload Students</h3>
+            <div className="space-y-4">
+              <p className="text-sm text-base-content/60">
+                Upload an Excel file with student data. Make sure to use the
+                provided template format.
+              </p>
+              <div className="form-control">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) =>
+                    setSelectedFile(e.target.files?.[0] || null)
+                  }
+                  className="file-input file-input-bordered w-full rounded-none"
+                />
+              </div>
+              {selectedFile && (
+                <div className="alert alert-info rounded-none">
+                  <span className="text-sm">
+                    Selected: {selectedFile.name}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-action">
+              <button
+                onClick={() => {
+                  setShowBulkUploadModal(false);
+                  setSelectedFile(null);
+                }}
+                disabled={isUploading}
+                className="btn btn-ghost rounded-none"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkUpload}
+                disabled={isUploading || !selectedFile}
+                className="btn btn-primary rounded-none"
+              >
+                {isUploading ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  "Upload"
+                )}
+              </button>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => !isUploading && setShowBulkUploadModal(false)}
+          ></div>
+        </div>
+      )}
     </div>
   );
 }
