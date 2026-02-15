@@ -118,8 +118,19 @@ export default function DeanSOCSEDashboard() {
         <header className="bg-base-100 shadow-sm border-b border-base-300 ">
           <div className="navbar max-w-7xl mx-auto px-4 lg:px-8">
             {/* Brand */}
-            <Link href="/" className="btn btn-ghost text-xl normal-case">
-              Placement Cell
+            <Link href="/" className="flex items-center gap-2 group">
+              {/* Logo placeholder - replace with actual Image if available */}
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-primary-content font-bold text-xl shadow-lg group-hover:scale-105 transition-transform">
+                PC
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-lg leading-none tracking-tight">
+                  Placement Cell
+                </span>
+                <span className="text-xs text-base-content/60 font-medium tracking-widest uppercase">
+                  RV University
+                </span>
+              </div>
             </Link>
             <div className="navbar-end gap-2 ml-auto">
               <button

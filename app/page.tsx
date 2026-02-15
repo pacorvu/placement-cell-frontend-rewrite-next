@@ -84,24 +84,67 @@ export default function HomePage() {
                 tabIndex={0}
                 className="menu menu-sm dropdown-content mt-3 z-[100] p-2 shadow bg-base-100 rounded-box w-52"
               >
-                <li><Link href="/#home" className="scroll-smooth">Home</Link></li>
-                <li><Link href="/#about" className="scroll-smooth">About</Link></li>
-                <li><Link href="/#recruiters" className="scroll-smooth">Recruiters</Link></li>
-                <li><Link href="/#contact" className="scroll-smooth">Contact</Link></li>
+                <li>
+                  <Link href="/#home" className="scroll-smooth">
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/#about" className="scroll-smooth">
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/#recruiters" className="scroll-smooth">
+                    Recruiters
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/#contact" className="scroll-smooth">
+                    Contact
+                  </Link>
+                </li>
               </ul>
             </div>
-            <Link href="/" className="btn btn-ghost text-xl normal-case">
-              Placement Cell RVU
+            <Link href="/" className="flex items-center gap-2 group">
+              {/* Logo placeholder - replace with actual Image if available */}
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-primary-content font-bold text-xl shadow-lg group-hover:scale-105 transition-transform">
+                PC
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-lg leading-none tracking-tight">
+                  Placement Cell
+                </span>
+                <span className="text-xs text-base-content/60 font-medium tracking-widest uppercase">
+                  RV University
+                </span>
+              </div>
             </Link>
           </div>
 
           {/* Center - Desktop */}
           <div className="navbar-center hidden lg:flex">
             <ul className="menu menu-horizontal px-1">
-              <li><Link href="/#home" className="scroll-smooth">Home</Link></li>
-              <li><Link href="/#about" className="scroll-smooth">About</Link></li>
-              <li><Link href="/#recruiters" className="scroll-smooth">Recruiters</Link></li>
-              <li><Link href="/#contact" className="scroll-smooth">Contact</Link></li>
+              <li>
+                <Link href="/#home" className="scroll-smooth">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link href="/#about" className="scroll-smooth">
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link href="/#recruiters" className="scroll-smooth">
+                  Recruiters
+                </Link>
+              </li>
+              <li>
+                <Link href="/#contact" className="scroll-smooth">
+                  Contact
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -130,7 +173,9 @@ export default function HomePage() {
                 </span>
               </h1>
               <p className="text-xl text-base-content/70 leading-relaxed">
-                Connect with world-class recruiters and land your dream job at RV University. Get expert guidance, comprehensive training, and exclusive opportunities.
+                Connect with world-class recruiters and land your dream job at
+                RV University. Get expert guidance, comprehensive training, and
+                exclusive opportunities.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
@@ -151,7 +196,10 @@ export default function HomePage() {
                     />
                   </svg>
                 </Link>
-                <Link href="/#recruiters" className="btn btn-outline btn-lg scroll-smooth">
+                <Link
+                  href="/#recruiters"
+                  className="btn btn-outline btn-lg scroll-smooth"
+                >
                   View Companies
                 </Link>
               </div>
@@ -204,9 +252,14 @@ export default function HomePage() {
       <section id="about" className="py-20 bg-base-200">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl lg:text-5xl font-bold mb-4">About Placement Cell RVU</h2>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-4">
+              About Placement Cell RVU
+            </h2>
             <p className="text-xl text-base-content/70 max-w-3xl mx-auto">
-              The Career Development and Placement Cell at RV University empowers students with tailored career guidance, skill-building workshops, mock interviews, industry networking, and strong recruiter connections to launch successful careers.
+              The Career Development and Placement Cell at RV University
+              empowers students with tailored career guidance, skill-building
+              workshops, mock interviews, industry networking, and strong
+              recruiter connections to launch successful careers.
             </p>
           </div>
           {/* Add more content, images, or timeline here later */}
@@ -221,7 +274,8 @@ export default function HomePage() {
               Top Recruiters
             </h2>
             <p className="text-xl text-base-content/60">
-              Our students are trusted by leading companies across tech, finance, consulting, and more.
+              Our students are trusted by leading companies across tech,
+              finance, consulting, and more.
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
@@ -288,9 +342,12 @@ export default function HomePage() {
       <section id="contact" className="py-20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl lg:text-5xl font-bold mb-4">Get in Touch</h2>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-4">
+              Get in Touch
+            </h2>
             <p className="text-xl text-base-content/70 max-w-2xl mx-auto">
-              Have questions about placements, training, or recruitment? Reach out to us!
+              Have questions about placements, training, or recruitment? Reach
+              out to us!
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-12">
@@ -299,14 +356,17 @@ export default function HomePage() {
                 <h3 className="card-title">Contact Information</h3>
                 <ul className="space-y-4 mt-4">
                   <li>
-                    <strong>Email:</strong> admissions@rvu.edu.in (for placement inquiries)
+                    <strong>Email:</strong> admissions@rvu.edu.in (for placement
+                    inquiries)
                   </li>
                   <li>
                     <strong>Phone:</strong> +91 89511 79896
                   </li>
                   <li>
-                    <strong>Address:</strong><br />
-                    RV Vidyanikethan Post, 8th Mile, Mysuru Road,<br />
+                    <strong>Address:</strong>
+                    <br />
+                    RV Vidyanikethan Post, 8th Mile, Mysuru Road,
+                    <br />
                     Bengaluru – 560 059
                   </li>
                 </ul>
@@ -317,7 +377,8 @@ export default function HomePage() {
               <div className="card-body">
                 <h3 className="card-title">Quick Message</h3>
                 <p className="text-base-content/70 mt-4">
-                  For now, please email us directly at admissions@rvu.edu.in. Full contact form coming soon!
+                  For now, please email us directly at admissions@rvu.edu.in.
+                  Full contact form coming soon!
                 </p>
               </div>
             </div>
