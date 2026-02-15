@@ -977,6 +977,27 @@ export default function RegistrationPage({ params }: RegistrationPageProps) {
   // Mutations
   // ============================================
   // Download template mutation
+  const downloadTemplateMutation = useMutation({
+    mutationFn: () =>
+      api.get(`/process/bulk-upload/template/${id}`, {
+        responseType: "blob",
+      }),
+    onSuccess: (response) => {
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `placement_drive_${id}_template.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      showToast("Template downloaded successfully!", "success");
+    },
+    onError: (error: any) => {
+      showToast(error.response?.data?.detail || "Failed to download template", "error");
+    },
+  });
+
 
 
 
@@ -1114,27 +1135,6 @@ export default function RegistrationPage({ params }: RegistrationPageProps) {
       </div>
     );
   }
-
-  const downloadTemplateMutation = useMutation({
-    mutationFn: () =>
-      api.get(`/process/bulk-upload/template/${id}`, {
-        responseType: "blob",
-      }),
-    onSuccess: (response) => {
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `placement_drive_${id}_template.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      showToast("Template downloaded successfully!", "success");
-    },
-    onError: (error: any) => {
-      showToast(error.response?.data?.detail || "Failed to download template", "error");
-    },
-  });
 
   // ============================================
   // Render
