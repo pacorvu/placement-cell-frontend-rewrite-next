@@ -1,6 +1,6 @@
 "use client";
 
-import {use, useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -32,12 +32,12 @@ interface JobOffer {
   id: number;
   usn: string;
   hiring_type:
-    | "FULL_TIME"
-    | "INTERNSHIP"
-    | "INTERNSHIP_PLUS_PPO"
-    | "CONTRACT"
-    | "OTHER"
-    | null;
+  | "FULL_TIME"
+  | "INTERNSHIP"
+  | "INTERNSHIP_PLUS_PPO"
+  | "CONTRACT"
+  | "OTHER"
+  | null;
   job_type: "DOMESTIC" | "INTERNATIONAL" | null;
   internship_duration: number | null;
   internship_stipend: number | null;
@@ -46,12 +46,12 @@ interface JobOffer {
   ctc_variable_pay: number | null;
   designation: string | null;
   offer_letter_status:
-    | "NOT_ISSUED"
-    | "ISSUED"
-    | "ACCEPTED"
-    | "REJECTED"
-    | "WITHDRAWN"
-    | null;
+  | "NOT_ISSUED"
+  | "ISSUED"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "WITHDRAWN"
+  | null;
   final_interview_status: "PASSED" | "FAILED" | "ABSENT";
   remarks: string | null;
   company_id: number | null;
@@ -507,7 +507,7 @@ export default function JobOfferPage({ params }: JobOfferPageProps) {
                 >
                   {
                     OFFER_STATUS_LABELS[
-                      displayData.offer_letter_status || "NOT_ISSUED"
+                    displayData.offer_letter_status || "NOT_ISSUED"
                     ]
                   }
                 </span>
@@ -675,7 +675,7 @@ export default function JobOfferPage({ params }: JobOfferPageProps) {
                       >
                         {
                           OFFER_STATUS_LABELS[
-                            displayData.offer_letter_status || "NOT_ISSUED"
+                          displayData.offer_letter_status || "NOT_ISSUED"
                           ]
                         }
                       </span>
@@ -910,69 +910,69 @@ export default function JobOfferPage({ params }: JobOfferPageProps) {
               displayData.internship_duration ||
               displayData.internship_stipend ||
               isEditing) && (
-              <div className="card bg-base-200 shadow-lg">
-                <div className="card-body">
-                  <h2 className="card-title text-xl flex items-center gap-2">
-                    <Clock className="h-6 w-6 text-primary" />
-                    Internship Details
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                    <div className="p-4 bg-base-100 rounded-lg">
-                      <p className="text-xs text-base-content/60 mb-2">
-                        Duration (months)
-                      </p>
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          value={displayData.internship_duration || ""}
-                          onChange={(e) =>
-                            updateField(
-                              "internship_duration",
-                              parseInt(e.target.value) || null,
-                            )
-                          }
-                          className="input input-bordered w-full"
-                          placeholder="e.g., 3"
-                          min="0"
-                        />
-                      ) : (
-                        <p className="text-2xl font-bold">
-                          {displayData.internship_duration || 0} months
+                <div className="card bg-base-200 shadow-lg">
+                  <div className="card-body">
+                    <h2 className="card-title text-xl flex items-center gap-2">
+                      <Clock className="h-6 w-6 text-primary" />
+                      Internship Details
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                      <div className="p-4 bg-base-100 rounded-lg">
+                        <p className="text-xs text-base-content/60 mb-2">
+                          Duration (months)
                         </p>
-                      )}
-                    </div>
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            value={displayData.internship_duration || ""}
+                            onChange={(e) =>
+                              updateField(
+                                "internship_duration",
+                                parseInt(e.target.value) || null,
+                              )
+                            }
+                            className="input input-bordered w-full"
+                            placeholder="e.g., 3"
+                            min="0"
+                          />
+                        ) : (
+                          <p className="text-2xl font-bold">
+                            {displayData.internship_duration || 0} months
+                          </p>
+                        )}
+                      </div>
 
-                    <div className="p-4 bg-base-100 rounded-lg">
-                      <p className="text-xs text-base-content/60 mb-2">
-                        Stipend
-                      </p>
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          value={displayData.internship_stipend || ""}
-                          onChange={(e) =>
-                            updateField(
-                              "internship_stipend",
-                              parseFloat(e.target.value) || null,
-                            )
-                          }
-                          className="input input-bordered w-full"
-                          placeholder="e.g., 50000"
-                          min="0"
-                        />
-                      ) : (
-                        <p className="text-2xl font-bold text-success">
-                          ₹
-                          {displayData.internship_stipend?.toLocaleString(
-                            "en-IN",
-                          ) || "0"}
+                      <div className="p-4 bg-base-100 rounded-lg">
+                        <p className="text-xs text-base-content/60 mb-2">
+                          Stipend
                         </p>
-                      )}
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            value={displayData.internship_stipend || ""}
+                            onChange={(e) =>
+                              updateField(
+                                "internship_stipend",
+                                parseFloat(e.target.value) || null,
+                              )
+                            }
+                            className="input input-bordered w-full"
+                            placeholder="e.g., 50000"
+                            min="0"
+                          />
+                        ) : (
+                          <p className="text-2xl font-bold text-success">
+                            ₹
+                            {displayData.internship_stipend?.toLocaleString(
+                              "en-IN",
+                            ) || "0"}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Remarks */}
             <div className="card bg-base-200 shadow-lg">
