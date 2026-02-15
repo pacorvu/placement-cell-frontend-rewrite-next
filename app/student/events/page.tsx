@@ -22,10 +22,10 @@ const eventSchema = z.object({
   type: z.string().nullable(),
   details: z.string().nullable(),
   event_datetime: z.string().datetime().nullable(),
-  images: z.array(z.string()).nullable(),
-  attachments: z.array(z.string()).nullable(),
-  images_signed_urls: z.array(z.string()).nullable(),
-  attachments_signed_urls: z.array(z.string()).nullable(),
+  images: z.array(z.string().nullable()).nullable(),
+  attachments: z.array(z.string().nullable()).nullable(),
+  images_signed_urls: z.array(z.string().nullable()).nullable(),
+  attachments_signed_urls: z.array(z.string().nullable()).nullable(),
   created_at: z.string().datetime().nullable(),
   updated_at: z.string().datetime().nullable(),
 });
@@ -47,6 +47,7 @@ const EVENT_TYPE_BADGE: Record<string, string> = {
   GUEST_LECTURE: "badge-ghost",
 };
 
+// ==================== HELPER FUNCTIONS ====================
 function formatEventType(type: string | null): string {
   if (!type) return "Uncategorized";
   return type
@@ -89,11 +90,17 @@ function isUpcoming(dateStr: string | null): boolean {
   }
 }
 
+// Filter and count valid URLs from arrays that might contain nulls
+function getValidUrls(urls: (string | null)[] | null | undefined): string[] {
+  if (!urls) return [];
+  return urls.filter((url): url is string => typeof url === "string" && url.length > 0);
+}
+
 // Total attachments = images + attachments combined
 function getTotalAttachments(event: Event): number {
-  const images = event.images_signed_urls?.length ?? 0;
-  const attachments = event.attachments_signed_urls?.length ?? 0;
-  return images + attachments;
+  const validImages = getValidUrls(event.images_signed_urls);
+  const validAttachments = getValidUrls(event.attachments_signed_urls);
+  return validImages.length + validAttachments.length;
 }
 
 // ==================== COLUMN HELPER ====================
@@ -106,17 +113,26 @@ interface EventModalProps {
   onClose: () => void;
 }
 
+interface AttachmentItem {
+  url: string;
+  label: string;
+  icon: typeof Image | typeof FileText;
+}
+
 function EventModal({ event, isOpen, onClose }: EventModalProps) {
   if (!isOpen) return null;
 
-  // Merge all signed URLs into one list with a type tag
-  const allAttachments = [
-    ...(event.images_signed_urls ?? []).map((url, idx) => ({
+  // Get valid URLs and create attachment items
+  const validImages = getValidUrls(event.images_signed_urls);
+  const validAttachments = getValidUrls(event.attachments_signed_urls);
+
+  const allAttachments: AttachmentItem[] = [
+    ...validImages.map((url, idx) => ({
       url,
       label: `Image ${idx + 1}`,
       icon: Image,
     })),
-    ...(event.attachments_signed_urls ?? []).map((url, idx) => ({
+    ...validAttachments.map((url, idx) => ({
       url,
       label: `Attachment ${idx + 1}`,
       icon: FileText,
@@ -235,7 +251,7 @@ export default function Events() {
     queryKey: ["events"],
     queryFn: async () => {
       const response = await api.get<GetEventsResponse>("/events");
-      return response.data;
+      return getEventsResponseSchema.parse(response.data);
     },
   });
 
@@ -243,7 +259,7 @@ export default function Events() {
     if (!data) return [];
     const types = data
       .map((e) => e.type)
-      .filter((type): type is string => type !== null);
+      .filter((type): type is string => type !== null && type.length > 0);
     return [...new Set(types)].sort();
   }, [data]);
 
