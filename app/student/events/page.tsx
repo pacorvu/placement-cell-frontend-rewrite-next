@@ -14,19 +14,20 @@ import { z } from "zod";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { Calendar, FileText, Image, Paperclip, X } from "lucide-react";
+
 // ==================== SCHEMAS ====================
 const eventSchema = z.object({
   id: z.number().int(),
-  title: z.string(),
-  type: z.string(),
-  details: z.string(),
-  event_datetime: z.string().datetime(),
-  images: z.array(z.string()),
-  attachments: z.array(z.string()),
-  images_signed_urls: z.array(z.string()),
-  attachments_signed_urls: z.array(z.string()),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  title: z.string().nullable(),
+  type: z.string().nullable(),
+  details: z.string().nullable(),
+  event_datetime: z.string().datetime().nullable(),
+  images: z.array(z.string()).nullable(),
+  attachments: z.array(z.string()).nullable(),
+  images_signed_urls: z.array(z.string()).nullable(),
+  attachments_signed_urls: z.array(z.string()).nullable(),
+  created_at: z.string().datetime().nullable(),
+  updated_at: z.string().datetime().nullable(),
 });
 
 const getEventsResponseSchema = z.array(eventSchema);
@@ -46,35 +47,53 @@ const EVENT_TYPE_BADGE: Record<string, string> = {
   GUEST_LECTURE: "badge-ghost",
 };
 
-function formatEventType(type: string): string {
+function formatEventType(type: string | null): string {
+  if (!type) return "Uncategorized";
   return type
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "Date TBD";
+  try {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return "Invalid Date";
+  }
 }
 
-function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
+function formatTime(dateStr: string | null): string {
+  if (!dateStr) return "Time TBD";
+  try {
+    return new Date(dateStr).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return "Invalid Time";
+  }
 }
 
-function isUpcoming(dateStr: string): boolean {
-  return new Date(dateStr) >= new Date();
+function isUpcoming(dateStr: string | null): boolean {
+  if (!dateStr) return false;
+  try {
+    return new Date(dateStr) >= new Date();
+  } catch {
+    return false;
+  }
 }
 
 // Total attachments = images + attachments combined
 function getTotalAttachments(event: Event): number {
-  return event.images_signed_urls.length + event.attachments_signed_urls.length;
+  const images = event.images_signed_urls?.length ?? 0;
+  const attachments = event.attachments_signed_urls?.length ?? 0;
+  return images + attachments;
 }
 
 // ==================== COLUMN HELPER ====================
@@ -92,19 +111,19 @@ function EventModal({ event, isOpen, onClose }: EventModalProps) {
 
   // Merge all signed URLs into one list with a type tag
   const allAttachments = [
-    ...event.images_signed_urls.map((url, idx) => ({
+    ...(event.images_signed_urls ?? []).map((url, idx) => ({
       url,
       label: `Image ${idx + 1}`,
-      icon: Image,  // component reference, not JSX
+      icon: Image,
     })),
-    ...event.attachments_signed_urls.map((url, idx) => ({
+    ...(event.attachments_signed_urls ?? []).map((url, idx) => ({
       url,
       label: `Attachment ${idx + 1}`,
       icon: FileText,
     })),
   ];
 
-  const badgeClass = EVENT_TYPE_BADGE[event.type] || "badge-ghost";
+  const badgeClass = event.type ? EVENT_TYPE_BADGE[event.type] || "badge-ghost" : "badge-ghost";
 
   return (
     <>
@@ -118,22 +137,23 @@ function EventModal({ event, isOpen, onClose }: EventModalProps) {
           <div className="card-body pb-3">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold">{event.title}</h3>
+                <h3 className="text-lg font-bold">{event.title || "Untitled Event"}</h3>
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
                   <span className={`badge ${badgeClass}`}>
                     {formatEventType(event.type)}
                   </span>
-                  <span className="text-sm opacity-50">
-                    {formatDate(event.event_datetime)} at {formatTime(event.event_datetime)}
-                  </span>
-                  {isUpcoming(event.event_datetime) && (
+                  {event.event_datetime && (
+                    <span className="text-sm opacity-50">
+                      {formatDate(event.event_datetime)} at {formatTime(event.event_datetime)}
+                    </span>
+                  )}
+                  {event.event_datetime && isUpcoming(event.event_datetime) && (
                     <span className="badge badge-success badge-sm">Upcoming</span>
                   )}
                 </div>
               </div>
               <button className="btn btn-ghost btn-sm btn-circle shrink-0" onClick={onClose}>
                 <X className="w-4 h-4" />
-
               </button>
             </div>
           </div>
@@ -221,7 +241,10 @@ export default function Events() {
 
   const eventTypes = useMemo(() => {
     if (!data) return [];
-    return [...new Set(data.map((e) => e.type))].sort();
+    const types = data
+      .map((e) => e.type)
+      .filter((type): type is string => type !== null);
+    return [...new Set(types)].sort();
   }, [data]);
 
   const filteredData = useMemo(() => {
@@ -242,7 +265,7 @@ export default function Events() {
         header: "Title",
         cell: ({ row, getValue }) => (
           <div>
-            <div className="font-medium">{getValue()}</div>
+            <div className="font-medium">{getValue() || "Untitled Event"}</div>
             {isUpcoming(row.original.event_datetime) && (
               <span className="badge badge-success badge-sm mt-0.5">Upcoming</span>
             )}
@@ -253,7 +276,7 @@ export default function Events() {
         header: "Type",
         cell: ({ getValue }) => {
           const type = getValue();
-          const badgeClass = EVENT_TYPE_BADGE[type] || "badge-ghost";
+          const badgeClass = type ? EVENT_TYPE_BADGE[type] || "badge-ghost" : "badge-ghost";
           return (
             <span className={`badge ${badgeClass}`}>
               {formatEventType(type)}
@@ -263,12 +286,22 @@ export default function Events() {
       }),
       columnHelper.accessor("event_datetime", {
         header: "Date & Time",
-        cell: ({ getValue }) => (
-          <div>
-            <div className="font-medium">{formatDate(getValue())}</div>
-            <div className="text-sm opacity-50">{formatTime(getValue())}</div>
-          </div>
-        ),
+        cell: ({ getValue }) => {
+          const dateTime = getValue();
+          if (!dateTime) {
+            return (
+              <div className="text-sm opacity-50">
+                <div>Date TBD</div>
+              </div>
+            );
+          }
+          return (
+            <div>
+              <div className="font-medium">{formatDate(dateTime)}</div>
+              <div className="text-sm opacity-50">{formatTime(dateTime)}</div>
+            </div>
+          );
+        },
       }),
       columnHelper.accessor("details", {
         header: "Details",
