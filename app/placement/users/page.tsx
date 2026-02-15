@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "@tanstack/react-form";
+import { z } from "zod";
 import {
   Table,
   TableBody,
@@ -9,236 +12,279 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2 } from "lucide-react";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 
-interface User {
-  id: number;
-  name: string;
+// Types based on API schema
+type OtherStakeholderRoleType = "COMPANY_REP" | "DEAN" | "MANAGEMENT" | "ADMISSION_OFFICE";
+
+interface OtherStakeholder {
+  user_id: number;
   email: string;
-  role: string;
-  stakeholder: string;
-  created_at: string;
+  role_name: string;
 }
 
-type RoleFilter = "all" | "Placement Team" | "Students" | "Alumni" | "Company Reps";
+interface OtherStakeholderCreate {
+  email: string;
+  role_type: OtherStakeholderRoleType;
+}
 
-const ROLE_FILTERS: { key: RoleFilter; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "Placement Team", label: "Placement Team" },
-  { key: "Students", label: "Students" },
-  { key: "Alumni", label: "Alumni" },
-  { key: "Company Reps", label: "Company Reps" },
-];
+interface OtherStakeholderUpdate {
+  email?: string | null;
+  role_type?: OtherStakeholderRoleType | null;
+}
 
-const MOCK_USERS: User[] = [
-  {
-    id: 1,
-    name: "Placement Officer",
-    email: "admin@rvu.edu.in",
-    role: "ADMIN",
-    stakeholder: "Placement Team",
-    created_at: "2023-01-01",
+// Validation schemas
+const createStakeholderSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  role_type: z.enum(["COMPANY_REP", "DEAN", "MANAGEMENT", "ADMISSION_OFFICE"], {
+    error: "Please select a role",
+  }),
+});
+
+const updateStakeholderSchema = z.object({
+  email: z.string().email("Invalid email address").optional().nullable(),
+  role_type: z.enum(["COMPANY_REP", "DEAN", "MANAGEMENT", "ADMISSION_OFFICE"]).optional().nullable(),
+});
+
+// API functions
+const stakeholderApi = {
+  getAll: async (): Promise<OtherStakeholder[]> => {
+    const { data } = await api.get("/other-stakeholders/");
+    return data;
   },
-  {
-    id: 2,
-    name: "Super Admin",
-    email: "superadmin@rvu.edu.in",
-    role: "SUPERADMIN",
-    stakeholder: "Placement Team",
-    created_at: "2023-01-01",
+  create: async (stakeholder: OtherStakeholderCreate): Promise<OtherStakeholder> => {
+    const { data } = await api.post("/other-stakeholders/", stakeholder);
+    return data;
   },
-  {
-    id: 3,
-    name: "John Doe",
-    email: "john@student.rvu.edu.in",
-    role: "STUDENT",
-    stakeholder: "Students",
-    created_at: "2023-06-15",
+  update: async (userId: number, stakeholder: OtherStakeholderUpdate): Promise<OtherStakeholder> => {
+    const { data } = await api.patch(`/other-stakeholders/${userId}`, stakeholder);
+    return data;
   },
-  {
-    id: 4,
-    name: "Jane Smith",
-    email: "jane@student.rvu.edu.in",
-    role: "STUDENT",
-    stakeholder: "Students",
-    created_at: "2023-06-16",
+  delete: async (userId: number): Promise<void> => {
+    await api.delete(`/other-stakeholders/${userId}`);
   },
-  {
-    id: 5,
-    name: "Alice Alumni",
-    email: "alice@alumni.rvu.edu.in",
-    role: "ALUMNI",
-    stakeholder: "Alumni",
-    created_at: "2022-05-20",
-  },
-  {
-    id: 6,
-    name: "Bob Recruiter",
-    email: "bob@techcorp.com",
-    role: "COMPANY_REP",
-    stakeholder: "Company Reps",
-    created_at: "2023-08-10",
-  },
+};
+
+const ROLE_OPTIONS: { value: OtherStakeholderRoleType; label: string }[] = [
+  { value: "COMPANY_REP", label: "Company Representative" },
+  { value: "DEAN", label: "Dean" },
+  { value: "MANAGEMENT", label: "Management" },
+  { value: "ADMISSION_OFFICE", label: "Admission Office" },
 ];
 
 const ROLE_BADGE_STYLES: Record<string, string> = {
-  ADMIN: "bg-amber-100 text-amber-800 border-amber-300",
-  SUPERADMIN: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  STUDENT: "bg-green-100 text-green-800 border-green-300",
-  ALUMNI: "bg-purple-100 text-purple-800 border-purple-300",
   COMPANY_REP: "bg-blue-100 text-blue-800 border-blue-300",
+  DEAN: "bg-purple-100 text-purple-800 border-purple-300",
+  MANAGEMENT: "bg-amber-100 text-amber-800 border-amber-300",
+  ADMISSION_OFFICE: "bg-green-100 text-green-800 border-green-300",
 };
 
 function getRoleBadgeStyle(role: string): string {
   return ROLE_BADGE_STYLES[role.toUpperCase()] || "bg-gray-100 text-gray-800 border-gray-300";
 }
 
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
 export default function UserManagementPage() {
-  const [activeFilter, setActiveFilter] = useState<RoleFilter>("all");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<OtherStakeholder | null>(null);
+  const queryClient = useQueryClient();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    role: "STUDENT",
-    stakeholder: "Students",
-    password: "",
+  // Fetch all stakeholders
+  const {
+    data: stakeholders = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["other-stakeholders"],
+    queryFn: stakeholderApi.getAll,
   });
 
-  const filteredUsers = useMemo(() => {
-    if (activeFilter === "all") return MOCK_USERS;
-    return MOCK_USERS.filter((user) => user.stakeholder === activeFilter);
-  }, [activeFilter]);
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: stakeholderApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["other-stakeholders"] });
+      setShowAddModal(false);
+      toast.success("Stakeholder created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to create stakeholder");
+    },
+  });
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ userId, data }: { userId: number; data: OtherStakeholderUpdate }) =>
+      stakeholderApi.update(userId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["other-stakeholders"] });
+      setEditingUser(null);
+      toast.success("Stakeholder updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to update stakeholder");
+    },
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: stakeholderApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["other-stakeholders"] });
+      toast.success("Stakeholder deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to delete stakeholder");
+    },
+  });
+
+  // Create form
+  const createForm = useForm({
+    defaultValues: {
       email: "",
-      role: "STUDENT",
-      stakeholder: "Students",
-      password: "",
-    });
+      role_type: "COMPANY_REP" as OtherStakeholderRoleType,
+    },
+    validators: {
+      onBlur: createStakeholderSchema,
+    },
+    onSubmit: async ({ value }) => {
+      createMutation.mutate(value);
+    },
+  });
+
+  // Edit form
+  const editForm = useForm({
+    defaultValues: {
+      email: editingUser?.email || "",
+      role_type: (editingUser?.role_name as OtherStakeholderRoleType) || "COMPANY_REP",
+    },
+    validators: {
+      onBlur: createStakeholderSchema,
+    },
+    onSubmit: async ({ value }) => {
+      if (editingUser) {
+        updateMutation.mutate({
+          userId: editingUser.user_id,
+          data: value,
+        });
+      }
+    },
+  });
+
+  const handleDelete = (userId: number) => {
+    if (confirm("Are you sure you want to delete this stakeholder?")) {
+      deleteMutation.mutate(userId);
+    }
   };
 
-  const openEditModal = (user: User) => {
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+    createForm.reset();
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingUser(null);
+    editForm.reset();
+  };
+
+  const handleOpenEditModal = (user: OtherStakeholder) => {
     setEditingUser(user);
-    setFormData({
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      stakeholder: user.stakeholder,
-      password: "",
-    });
+    editForm.setFieldValue("email", user.email);
+    editForm.setFieldValue("role_type", user.role_name as OtherStakeholderRoleType);
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold text-primary">User Management</h1>
+        <h1 className="text-3xl font-semibold text-primary">Other Stakeholders Management</h1>
         <button
           onClick={() => setShowAddModal(true)}
           className="btn btn-primary gap-2"
         >
           <Plus className="h-4 w-4" />
-          Add New User
+          Add New Stakeholder
         </button>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex gap-2">
-        {ROLE_FILTERS.map((filter) => (
-          <button
-            key={filter.key}
-            onClick={() => setActiveFilter(filter.key)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              activeFilter === filter.key
-                ? "bg-primary text-primary-content"
-                : "bg-base-200 text-base-content hover:bg-base-300"
-            }`}
-          >
-            {filter.label}
-          </button>
-        ))}
       </div>
 
       {/* Table Card */}
       <div className="card bg-base-100 shadow-lg border border-base-200">
         <div className="card-body p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-b border-base-200">
-                <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
-                  ID
-                </TableHead>
-                <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
-                  Name
-                </TableHead>
-                <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
-                  Email
-                </TableHead>
-                <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
-                  Role
-                </TableHead>
-                <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
-                  Stakeholder
-                </TableHead>
-                <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
-                  Created At
-                </TableHead>
-                <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user, index) => (
-                <TableRow
-                  key={user.id}
-                  className="border-b border-base-200 hover:bg-base-50"
-                >
-                  <TableCell className="text-base-content/60">
-                    {index + 1}
-                  </TableCell>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell className="text-base-content/70">
-                    {user.email}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2.5 py-1 text-xs font-semibold rounded border ${getRoleBadgeStyle(user.role)}`}
-                    >
-                      {user.role}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-base-content/70">
-                    {user.stakeholder}
-                  </TableCell>
-                  <TableCell className="text-base-content/70">
-                    {formatDate(user.created_at)}
-                  </TableCell>
-                  <TableCell>
-                    <button
-                      onClick={() => openEditModal(user)}
-                      className="btn btn-sm btn-square btn-primary"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                  </TableCell>
+          {isLoading ? (
+            <div className="flex items-center justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <div className="alert alert-error m-4">
+              <span>Error loading stakeholders: {(error as Error).message}</span>
+            </div>
+          ) : stakeholders.length === 0 ? (
+            <div className="text-center p-12 text-base-content/60">
+              No stakeholders found. Add one to get started.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-base-200">
+                  <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
+                    ID
+                  </TableHead>
+                  <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
+                    Email
+                  </TableHead>
+                  <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
+                    Role
+                  </TableHead>
+                  <TableHead className="font-semibold text-base-content/70 uppercase text-xs tracking-wider">
+                    Actions
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {stakeholders.map((user, index) => (
+                  <TableRow
+                    key={user.user_id}
+                    className="border-b border-base-200 hover:bg-base-50"
+                  >
+                    <TableCell className="text-base-content/60">
+                      {index + 1}
+                    </TableCell>
+                    <TableCell className="font-medium">{user.email}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2.5 py-1 text-xs font-semibold rounded border ${getRoleBadgeStyle(user.role_name)}`}
+                      >
+                        {user.role_name}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleOpenEditModal(user)}
+                          className="btn btn-sm btn-square btn-primary"
+                          disabled={updateMutation.isPending}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.user_id)}
+                          className="btn btn-sm btn-square btn-error"
+                          disabled={deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
 
@@ -247,114 +293,104 @@ export default function UserManagementPage() {
         <div className="modal modal-open">
           <div className="modal-box">
             <button
-              onClick={() => {
-                setShowAddModal(false);
-                resetForm();
-              }}
+              onClick={handleCloseAddModal}
               className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
             >
               <X className="h-4 w-4" />
             </button>
-            <h3 className="font-bold text-lg mb-4">Add New User</h3>
-            <div className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Name</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="input input-bordered"
-                  placeholder="Enter name"
+            <h3 className="font-bold text-lg mb-4">Add New Stakeholder</h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                createForm.handleSubmit();
+              }}
+            >
+              <div className="space-y-4">
+                <createForm.Field
+                  name="email"
+                  children={(field) => (
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">Email</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                        className="input input-bordered"
+                        placeholder="Enter email"
+                      />
+                      {field.state.meta.errors.length > 0 && (
+                        <label className="label">
+                          <span className="label-text-alt text-error">
+                            {field.state.meta.errors[0]?.message}
+                          </span>
+                        </label>
+                      )}
+                    </div>
+                  )}
+                />
+
+                <createForm.Field
+                  name="role_type"
+                  children={(field) => (
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">Role</span>
+                      </label>
+                      <select
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value as OtherStakeholderRoleType)}
+                        onBlur={field.handleBlur}
+                        className="select select-bordered"
+                      >
+                        {ROLE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      {field.state.meta.errors.length > 0 && (
+                        <label className="label">
+                          <span className="label-text-alt text-error">
+                            {field.state.meta.errors[0]?.message}
+                          </span>
+                        </label>
+                      )}
+                    </div>
+                  )}
                 />
               </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Email</span>
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="input input-bordered"
-                  placeholder="Enter email"
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Password</span>
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className="input input-bordered"
-                  placeholder="Enter password"
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Role</span>
-                </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) =>
-                    setFormData({ ...formData, role: e.target.value })
-                  }
-                  className="select select-bordered"
+
+              <div className="modal-action">
+                <button
+                  type="button"
+                  onClick={handleCloseAddModal}
+                  className="btn btn-ghost"
+                  disabled={createMutation.isPending}
                 >
-                  <option value="ADMIN">Admin</option>
-                  <option value="SUPERADMIN">Super Admin</option>
-                  <option value="STUDENT">Student</option>
-                  <option value="ALUMNI">Alumni</option>
-                  <option value="COMPANY_REP">Company Rep</option>
-                </select>
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Stakeholder</span>
-                </label>
-                <select
-                  value={formData.stakeholder}
-                  onChange={(e) =>
-                    setFormData({ ...formData, stakeholder: e.target.value })
-                  }
-                  className="select select-bordered"
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={createMutation.isPending}
                 >
-                  <option value="Placement Team">Placement Team</option>
-                  <option value="Students">Students</option>
-                  <option value="Alumni">Alumni</option>
-                  <option value="Company Reps">Company Reps</option>
-                </select>
+                  {createMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Adding...
+                    </>
+                  ) : (
+                    "Add Stakeholder"
+                  )}
+                </button>
               </div>
-            </div>
-            <div className="modal-action">
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  resetForm();
-                }}
-                className="btn btn-ghost"
-              >
-                Cancel
-              </button>
-              <button className="btn btn-primary">Add User</button>
-            </div>
+            </form>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => {
-              setShowAddModal(false);
-              resetForm();
-            }}
-          />
+          <div className="modal-backdrop" onClick={handleCloseAddModal} />
         </div>
       )}
 
@@ -363,114 +399,104 @@ export default function UserManagementPage() {
         <div className="modal modal-open">
           <div className="modal-box">
             <button
-              onClick={() => {
-                setEditingUser(null);
-                resetForm();
-              }}
+              onClick={handleCloseEditModal}
               className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
             >
               <X className="h-4 w-4" />
             </button>
-            <h3 className="font-bold text-lg mb-4">Edit User</h3>
-            <div className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Name</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="input input-bordered"
-                  placeholder="Enter name"
+            <h3 className="font-bold text-lg mb-4">Edit Stakeholder</h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                editForm.handleSubmit();
+              }}
+            >
+              <div className="space-y-4">
+                <editForm.Field
+                  name="email"
+                  children={(field) => (
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">Email</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                        className="input input-bordered"
+                        placeholder="Enter email"
+                      />
+                      {field.state.meta.errors.length > 0 && (
+                        <label className="label">
+                          <span className="label-text-alt text-error">
+                            {field.state.meta.errors[0]?.message}
+                          </span>
+                        </label>
+                      )}
+                    </div>
+                  )}
+                />
+
+                <editForm.Field
+                  name="role_type"
+                  children={(field) => (
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">Role</span>
+                      </label>
+                      <select
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value as OtherStakeholderRoleType)}
+                        onBlur={field.handleBlur}
+                        className="select select-bordered"
+                      >
+                        {ROLE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      {field.state.meta.errors.length > 0 && (
+                        <label className="label">
+                          <span className="label-text-alt text-error">
+                            {field.state.meta.errors[0]?.message}
+                          </span>
+                        </label>
+                      )}
+                    </div>
+                  )}
                 />
               </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Email</span>
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="input input-bordered"
-                  placeholder="Enter email"
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">New Password (leave blank to keep current)</span>
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className="input input-bordered"
-                  placeholder="Enter new password"
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Role</span>
-                </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) =>
-                    setFormData({ ...formData, role: e.target.value })
-                  }
-                  className="select select-bordered"
+
+              <div className="modal-action">
+                <button
+                  type="button"
+                  onClick={handleCloseEditModal}
+                  className="btn btn-ghost"
+                  disabled={updateMutation.isPending}
                 >
-                  <option value="ADMIN">Admin</option>
-                  <option value="SUPERADMIN">Super Admin</option>
-                  <option value="STUDENT">Student</option>
-                  <option value="ALUMNI">Alumni</option>
-                  <option value="COMPANY_REP">Company Rep</option>
-                </select>
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Stakeholder</span>
-                </label>
-                <select
-                  value={formData.stakeholder}
-                  onChange={(e) =>
-                    setFormData({ ...formData, stakeholder: e.target.value })
-                  }
-                  className="select select-bordered"
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={updateMutation.isPending}
                 >
-                  <option value="Placement Team">Placement Team</option>
-                  <option value="Students">Students</option>
-                  <option value="Alumni">Alumni</option>
-                  <option value="Company Reps">Company Reps</option>
-                </select>
+                  {updateMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
               </div>
-            </div>
-            <div className="modal-action">
-              <button
-                onClick={() => {
-                  setEditingUser(null);
-                  resetForm();
-                }}
-                className="btn btn-ghost"
-              >
-                Cancel
-              </button>
-              <button className="btn btn-primary">Save Changes</button>
-            </div>
+            </form>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => {
-              setEditingUser(null);
-              resetForm();
-            }}
-          />
+          <div className="modal-backdrop" onClick={handleCloseEditModal} />
         </div>
       )}
     </div>
