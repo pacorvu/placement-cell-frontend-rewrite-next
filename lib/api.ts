@@ -1,8 +1,11 @@
 // api.ts
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? 'https://placement-cell-backend-gm9g.onrender.com';
+
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
+  baseURL: BACKEND_URL,
 });
 
 // Auth response types
@@ -140,7 +143,7 @@ api.interceptors.response.use(
 
     try {
       const response = await axios.post<RefreshTokenResponse>(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/refresh`,
+        `${BACKEND_URL}/auth/refresh`,
         { refresh_token: refreshToken },
       );
 

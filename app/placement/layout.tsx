@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Navbar from "../../components/placement/Navbar";
-import ThemeToggle from "../../components/ThemeToggle";
 export default function PlacementLayout({
   children,
 }: {
@@ -35,7 +33,7 @@ export default function PlacementLayout({
           jwt_token: localStorage.getItem("access_token"),
         }),
       });
-    } catch (err) {
+    } catch {
       console.error("Logout request failed");
     } finally {
       const theme = localStorage.getItem("theme");
@@ -64,7 +62,7 @@ export default function PlacementLayout({
       <Navbar onLogout={handleLogout} />
 
       {/* ================= CONTENT ================= */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+      <main className="max-w-7xl mx-auto w-full px-4 py-6">
         {children}
       </main>
     </div>
