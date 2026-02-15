@@ -4,6 +4,7 @@ import "../public/output.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Cantarell } from "next/font/google";
 import Providers from "@/lib/query-client";
+import Link from "next/link";
 
 const cantarell = Cantarell({
   subsets: ["latin"],
@@ -12,8 +13,8 @@ const cantarell = Cantarell({
 });
 
 export const metadata: Metadata = {
-  title: "paco frontend",
-  description: "",
+  title: "Placement Cell RVU",
+  description: "Empowering RV University students with world-class placement opportunities and career guidance.",
 };
 
 export default function RootLayout({
@@ -31,6 +32,7 @@ export default function RootLayout({
           className={`antialiased flex min-h-screen flex-col ${cantarell.className}`}
         >
           {/* ================= NAVBAR ================= */}
+          {/* (You can move navbar here later if you want it in layout; for now it's in home) */}
 
           {/* ================= MAIN ================= */}
           <main className="flex-1">{children}</main>
@@ -42,8 +44,7 @@ export default function RootLayout({
               <aside className="md:col-span-2">
                 <div className="text-2xl font-bold mb-2">Placement Cell RVU</div>
                 <p className="text-sm opacity-80 max-w-md">
-                  Empowering students to achieve their career goals through
-                  world-class placement opportunities.
+                  Empowering RV University students to achieve their career goals through world-class placement opportunities, training, and industry connections.
                 </p>
               </aside>
 
@@ -52,57 +53,65 @@ export default function RootLayout({
                 <h6 className="footer-title">Quick Links</h6>
                 <ul className="space-y-2">
                   <li>
-                    <a href="#about" className="link link-hover">
+                    <Link href="/" className="link link-hover">
+                      Home
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/#about" className="link link-hover scroll-smooth">
                       About Us
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a href="#placement" className="link link-hover">
-                      Placement Process
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#recruiters" className="link link-hover">
+                    <Link href="/#recruiters" className="link link-hover scroll-smooth">
                       Recruiters
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a href="#contact" className="link link-hover">
+                    <Link href="/#contact" className="link link-hover scroll-smooth">
                       Contact Us
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </nav>
 
-              {/* Contact */}
+              {/* Contact — using real RV University data */}
               <nav>
                 <h6 className="footer-title">Contact</h6>
                 <ul className="space-y-2 text-sm">
                   <li>
                     <a
-                      href="mailto:placements@rvu.edu.in"
+                      href="mailto:admissions@rvu.edu.in"
                       className="link link-hover"
                     >
-                      placements@rvu.edu.in
+                      admissions@rvu.edu.in
                     </a>
                   </li>
                   <li>
-                    <a href="tel:+919876543210" className="link link-hover">
-                      +91 98765 43210
+                    <a href="tel:+918951179896" className="link link-hover">
+                      +91 89511 79896
                     </a>
                   </li>
-                  <li className="opacity-80">123 Education Lane, Tech City</li>
+                  <li>
+                    <a href="tel:+916366985882" className="link link-hover">
+                      +91 63669 85882 (Admissions)
+                    </a>
+                  </li>
+                  <li className="opacity-80">
+                    RV Vidyanikethan Post, 8th Mile, Mysuru Road, Bengaluru – 560 059
+                  </li>
                 </ul>
               </nav>
             </div>
 
             {/* Footer Bottom */}
             <div className="border-t border-base-300 py-4 text-center text-sm">
-              © 2026 Placement Cell RVU. All rights reserved.
+              © {new Date().getFullYear()} Placement Cell RVU – Powered by RV University. All rights reserved.
             </div>
           </footer>
           <Toaster />
         </body>
-      </html></Providers>
+      </html>
+    </Providers>
   );
 }

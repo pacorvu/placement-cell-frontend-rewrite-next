@@ -14,13 +14,13 @@ export default function HomePage() {
     "Google",
     "Microsoft",
     "Amazon",
-    "Adobe",
-    "Goldman Sachs",
-    "JP Morgan",
     "Deloitte",
+    "Goldman Sachs",
     "TCS",
     "Infosys",
-    "Wipro",
+    "KPMG",
+    "Samsung",
+    "IBM",
     "Accenture",
     "Capgemini",
   ];
@@ -53,9 +53,9 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-base-100 via-base-200 to-base-100">
-      {/* Hero Section */}
-      <header className="bg-base-100 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-base-100 via-base-200 to-base-100">
+      {/* ================= NAVBAR ================= */}
+      <header className="bg-base-100 shadow-sm sticky top-0 z-50">
         <div className="navbar max-w-7xl mx-auto px-4 lg:px-8">
           {/* Left */}
           <div className="navbar-start">
@@ -82,84 +82,55 @@ export default function HomePage() {
               </div>
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-10 p-2 shadow bg-base-100 rounded-box w-52"
+                className="menu menu-sm dropdown-content mt-3 z-[100] p-2 shadow bg-base-100 rounded-box w-52"
               >
-                <li>
-                  <a href="#home">Home</a>
-                </li>
-                <li>
-                  <a href="#about">About</a>
-                </li>
-                <li>
-                  <a href="#company">Company</a>
-                </li>
-                <li>
-                  <a href="#contact">Contact</a>
-                </li>
+                <li><Link href="/#home" className="scroll-smooth">Home</Link></li>
+                <li><Link href="/#about" className="scroll-smooth">About</Link></li>
+                <li><Link href="/#recruiters" className="scroll-smooth">Recruiters</Link></li>
+                <li><Link href="/#contact" className="scroll-smooth">Contact</Link></li>
               </ul>
             </div>
-            <a href="/" className="btn btn-ghost text-xl normal-case">
+            <Link href="/" className="btn btn-ghost text-xl normal-case">
               Placement Cell RVU
-            </a>
+            </Link>
           </div>
 
-          {/* Center */}
+          {/* Center - Desktop */}
           <div className="navbar-center hidden lg:flex">
             <ul className="menu menu-horizontal px-1">
-              <li>
-                <a href="#home">Home</a>
-              </li>
-              <li>
-                <a href="#about">About</a>
-              </li>
-              <li>
-                <a href="#company">Company</a>
-              </li>
-              <li>
-                <a href="#contact">Contact</a>
-              </li>
+              <li><Link href="/#home" className="scroll-smooth">Home</Link></li>
+              <li><Link href="/#about" className="scroll-smooth">About</Link></li>
+              <li><Link href="/#recruiters" className="scroll-smooth">Recruiters</Link></li>
+              <li><Link href="/#contact" className="scroll-smooth">Contact</Link></li>
             </ul>
           </div>
 
           {/* Right */}
-          <div className="navbar-end mr-2">
-            <a href="/login" className="btn btn-outline btn-primary">
+          <div className="navbar-end gap-2">
+            <Link href="/login" className="btn btn-outline btn-primary">
               Login
-            </a>
+            </Link>
+            <ThemeToggle />
           </div>
-          <ThemeToggle />
         </div>
       </header>
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-secondary/5"></div>
+
+      {/* ================= HERO SECTION ================= */}
+      <section id="home" className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none"></div>
         <div className="relative max-w-7xl mx-auto px-4 py-24 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div
               className={`space-y-8 ${mounted ? "animate-fade-in" : "opacity-0"}`}
             >
-              {/* <div className="inline-block">
-                <div className="badge badge-primary badge-lg gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  Top Placement Record
-                </div>
-              </div> */}
               <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
                 Launch Your
-                <span className="block bg-linear-to-br from-primary to-secondary bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent">
                   Dream Career
                 </span>
               </h1>
               <p className="text-xl text-base-content/70 leading-relaxed">
-                Connect with world-class recruiters and land your dream job. Get
-                expert guidance, comprehensive training, and exclusive
-                opportunities.
+                Connect with world-class recruiters and land your dream job at RV University. Get expert guidance, comprehensive training, and exclusive opportunities.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
@@ -180,7 +151,7 @@ export default function HomePage() {
                     />
                   </svg>
                 </Link>
-                <Link href="#recruiters" className="btn btn-outline btn-lg">
+                <Link href="/#recruiters" className="btn btn-outline btn-lg scroll-smooth">
                   View Companies
                 </Link>
               </div>
@@ -191,14 +162,14 @@ export default function HomePage() {
               className={`grid grid-cols-2 gap-6 ${mounted ? "animate-fade-in-up" : "opacity-0"}`}
               style={{ animationDelay: "200ms" }}
             >
-              <div className="card bg-linear-to-br from-primary to-primary-focus text-primary-content shadow-2xl transform hover:scale-105 transition-all duration-300">
+              <div className="card bg-gradient-to-br from-primary to-primary-focus text-primary-content shadow-2xl transform hover:scale-105 transition-all duration-300">
                 <div className="card-body">
-                  <div className="text-5xl font-bold">95%</div>
+                  <div className="text-5xl font-bold">90%+</div>
                   <div className="text-sm opacity-90">Placement Rate</div>
                 </div>
               </div>
               <div
-                className="card bg-linear-to-br from-secondary to-secondary-focus text-primary-content shadow-2xl transform hover:scale-105 transition-all duration-300"
+                className="card bg-gradient-to-br from-secondary to-secondary-focus text-primary-content shadow-2xl transform hover:scale-105 transition-all duration-300"
                 style={{ animationDelay: "100ms" }}
               >
                 <div className="card-body">
@@ -207,20 +178,20 @@ export default function HomePage() {
                 </div>
               </div>
               <div
-                className="card bg-linear-to-br from-accent to-accent-focus text-primary-content shadow-2xl transform hover:scale-105 transition-all duration-300"
+                className="card bg-gradient-to-br from-accent to-accent-focus text-primary-content shadow-2xl transform hover:scale-105 transition-all duration-300"
                 style={{ animationDelay: "200ms" }}
               >
                 <div className="card-body">
-                  <div className="text-4xl font-bold">45 LPA</div>
+                  <div className="text-4xl font-bold">30 LPA</div>
                   <div className="text-sm opacity-90">Highest Package</div>
                 </div>
               </div>
               <div
-                className="card bg-linear-to-br from-info to-info-focus text-primary-content shadow-2xl transform hover:scale-105 transition-all duration-300"
+                className="card bg-gradient-to-br from-info to-info-focus text-primary-content shadow-2xl transform hover:scale-105 transition-all duration-300"
                 style={{ animationDelay: "300ms" }}
               >
                 <div className="card-body">
-                  <div className="text-4xl font-bold">12 LPA</div>
+                  <div className="text-4xl font-bold">8-12 LPA</div>
                   <div className="text-sm opacity-90">Average Package</div>
                 </div>
               </div>
@@ -229,44 +200,55 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Top Recruiters */}
-      <section id="recruiters" className="py-20 bg-base-200">
+      {/* ================= ABOUT SECTION ================= */}
+      <section id="about" className="py-20 bg-base-200">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl lg:text-5xl font-bold mb-4">About Placement Cell RVU</h2>
+            <p className="text-xl text-base-content/70 max-w-3xl mx-auto">
+              The Career Development and Placement Cell at RV University empowers students with tailored career guidance, skill-building workshops, mock interviews, industry networking, and strong recruiter connections to launch successful careers.
+            </p>
+          </div>
+          {/* Add more content, images, or timeline here later */}
+        </div>
+      </section>
+
+      {/* ================= TOP RECRUITERS ================= */}
+      <section id="recruiters" className="py-20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold mb-4">
               Top Recruiters
             </h2>
             <p className="text-xl text-base-content/60">
-              Trusted by leading companies worldwide
+              Our students are trusted by leading companies across tech, finance, consulting, and more.
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {companies.map((company, index) => (
               <div
                 key={company}
-                className="card bg-base-100 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer h-32"
+                className="card bg-base-100 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer h-32 flex items-center justify-center"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className="card-body items-center justify-center p-4">
-                  <h3 className="font-semibold text-base text-center leading-tight">
-                    {company}
-                  </h3>
-                </div>
+                <h3 className="font-semibold text-lg text-center px-4">
+                  {company}
+                </h3>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Student Success Stories */}
-      <section className="py-20">
+      {/* ================= SUCCESS STORIES ================= */}
+      <section className="py-20 bg-base-200">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold mb-4">
               Success Stories
             </h2>
             <p className="text-xl text-base-content/60">
-              Hear from our successful alumni
+              Hear from our alumni who launched their dream careers.
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -278,7 +260,7 @@ export default function HomePage() {
               >
                 <div className="card-body">
                   <div
-                    className={`bg-linear-to-br ${testimonial.color} w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4`}
+                    className={`bg-gradient-to-br ${testimonial.color} w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4`}
                   >
                     {testimonial.name
                       .split(" ")
@@ -286,7 +268,7 @@ export default function HomePage() {
                       .join("")}
                   </div>
                   <p className="text-base-content/70 italic mb-6">
-                    &quot;{testimonial.quote}&quot;
+                    "{testimonial.quote}"
                   </p>
                   <div className="divider my-2"></div>
                   <div>
@@ -302,32 +284,60 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section
-      <section className="py-20 bg-gradient-to-br from-primary to-secondary">
+      {/* ================= CONTACT SECTION ================= */}
+      <section id="contact" className="py-20">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl lg:text-5xl font-bold mb-4">Get in Touch</h2>
+            <p className="text-xl text-base-content/70 max-w-2xl mx-auto">
+              Have questions about placements, training, or recruitment? Reach out to us!
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-12">
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h3 className="card-title">Contact Information</h3>
+                <ul className="space-y-4 mt-4">
+                  <li>
+                    <strong>Email:</strong> admissions@rvu.edu.in (for placement inquiries)
+                  </li>
+                  <li>
+                    <strong>Phone:</strong> +91 89511 79896
+                  </li>
+                  <li>
+                    <strong>Address:</strong><br />
+                    RV Vidyanikethan Post, 8th Mile, Mysuru Road,<br />
+                    Bengaluru – 560 059
+                  </li>
+                </ul>
+              </div>
+            </div>
+            {/* You can add a form here later */}
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h3 className="card-title">Quick Message</h3>
+                <p className="text-base-content/70 mt-4">
+                  For now, please email us directly at admissions@rvu.edu.in. Full contact form coming soon!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Optional CTA - uncomment if wanted */}
+      {/* <section className="py-20 bg-gradient-to-br from-primary to-secondary text-primary-content">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-4xl lg:text-5xl font-bold text-primary-content mb-6">
+          <h2 className="text-4xl lg:text-5xl font-bold mb-6">
             Ready to Start Your Journey?
           </h2>
-          <p className="text-xl text-primary-content/90 mb-8">
-            Join thousands of students who have successfully launched their
-            careers
+          <p className="text-xl opacity-90 mb-8">
+            Join thousands of RV University students building bright futures.
           </p>
-          <Link
-            href="/login"
-            className="btn btn-lg bg-base-100 text-primary hover:bg-base-200 border-none shadow-2xl gap-2"
-          >
+          <Link href="/login" className="btn btn-lg bg-base-100 text-primary hover:bg-base-200 border-none shadow-2xl gap-2">
             Login to Dashboard
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </Link>
         </div>
